@@ -20,3 +20,6 @@ def log_calculation(num1, num2, result, file_name="operation.json"):
 
 
 log_calculation(5, 10, 15)
+log_calculation(10, 10, 20)
+log_calculation(20, 20, 40)
+log_calculation(30, 30, 60)
