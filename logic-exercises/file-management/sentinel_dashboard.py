@@ -1,4 +1,5 @@
 import json
+import datetime
 
 LOG_FILE = "health_log.json"
 
@@ -9,6 +10,10 @@ no_permission = "Not enough permission"
 type_error = "Not supported"
 key_error = "Key not found in JSON file"
 value_error = "Wrong data type"
+
+
+def get_now():
+    return datetime.datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
 
 
 # Dispay log history in JSON file
@@ -26,11 +31,11 @@ def display_logs():
                 print(f"Memory: {log['mem']}\n")
 
     except PermissionError:
-        print(no_permission)
+        print(f"{no_permission} | Time: {get_now()}\n")
 
     except (FileNotFoundError, json.JSONDecodeError):
         logs = []
-        print(f"⚠️ {file_not_found} or {json_decode_error}")
+        print(f"⚠️ {file_not_found} or {json_decode_error} | Time: {get_now()}\n")
 
 
 # Allow manual server health check
@@ -40,34 +45,31 @@ def record_health(status, cpu, mem):
             with open(LOG_FILE, "r") as file:
                 logs = json.load(file)
 
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             logs = []
-            print(file_not_found)
+            print(f"{file_not_found} or {json_decode_error} | Time: {get_now()}\n")
 
-            logs.append({"status": status, "cpu": cpu, "mem": mem})
-            with open(LOG_FILE, "w") as file:
-                json.dump(logs, file, indent=4)
+        logs.append({"status": status, "cpu": cpu, "mem": mem})
+        with open(LOG_FILE, "w") as file:
+            json.dump(logs, file, indent=4)
 
-        except (TypeError, KeyError):
-            logs = []
-            print(f"{type_error} or {key_error}")
-
-        check_logs = input("Would you like to check the logs? (Y/N)\n").lower()
-        if check_logs == "y":
+        if input("Would you like to check the logs? (Y/N)\n").lower() == "y":
             display_logs()
 
     except Exception as e:
-        print(f"✖ Error: Cannot continue. {e}\n")
+        print(f"✖ Error: Cannot continue. {e}\n | Time: {get_now()}\n")
 
 
 # Clear all logs
 def clear_logs():
-    user_option = input(
-        "⚠️ Warning: You are about to delete all logs. "
-        "Are you sure that you want to proceed? "
-        "Data cannot be recovered. (Y/N)\n"
-    ).lower()
-    if user_option == "y":
+    if (
+        input(
+            "⚠️ Warning: You are about to delete all logs. "
+            "Are you sure that you want to proceed? "
+            "Data cannot be recovered. (Y/N)\n"
+        ).lower()
+        == "y"
+    ):
         with open(LOG_FILE, "w") as file:
             json.dump([], file)
         print("All logs were deleted.\n")
@@ -84,21 +86,29 @@ while True:
         "[4] Exit\n"
     )
 
-    if user_option == 1:
+    if user_option == "1":
         display_logs()
-    elif user_option == 2:
+    elif user_option == "2":
         try:
-            sv_status = input("Enter Server Status: \n").capitalize()
+            while True:
+                sv_status = input("Enter Server Status: \n").strip()
+
+                if sv_status.replace(" ", "").isalpha():
+                    sv_status = sv_status.capitalize()
+                    break
+                else:
+                    print(f"✖ {value_error} | Time: {get_now()}\n")
+
             sv_cpu = int(input("Enter Server CPU %: \n"))
             sv_mem = int(input("Enter Server Memory %: \n"))
             record_health(sv_status, sv_cpu, sv_mem)
 
         except ValueError:
-            print(f"✖ {value_error}")
+            print(f"✖ {value_error} | Time: {get_now()}\n")
 
-    elif user_option == 3:
+    elif user_option == "3":
         clear_logs()
-    elif user_option == 4:
+    elif user_option == "4":
         print("Thank you for using Sentinel. Have a nice day.\n")
         break
     else:
