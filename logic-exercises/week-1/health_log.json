@@ -1,0 +1,22 @@
+[
+    {
+        "status": "Healthy",
+        "cpu": 20,
+        "mem": 45
+    },
+    {
+        "status": "Warning",
+        "cpu": 85,
+        "mem": 60
+    },
+    {
+        "status": "Critical",
+        "cpu": 98,
+        "mem": 95
+    },
+    {
+        "status": "Healthy",
+        "cpu": 60,
+        "mem": 70
+    }
+]
