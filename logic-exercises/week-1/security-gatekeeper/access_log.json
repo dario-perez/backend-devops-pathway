@@ -1,0 +1,6 @@
+[
+    {"user": "dario", "action": "login", "success": true},
+    {"user": "admin", "action": "login", "success": false},
+    {"user": "guest", "action": "delete_db", "success": false},
+    {"user": "dario", "action": "upload", "success": true}
+]
