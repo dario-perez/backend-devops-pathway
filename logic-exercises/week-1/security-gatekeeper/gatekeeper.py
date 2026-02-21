@@ -1,9 +1,9 @@
 import json
-import os
+from pathlib import Path
 
-script_dir = os.path.dirname(__file__)
+base_path = Path(__file__).resolve().parent
 
-access_file = os.path.join(script_dir, "access_log.json")
+access_file = base_path.parent / "data" / "access_log.json"
 
 try:
     with open(access_file, "r") as file:
