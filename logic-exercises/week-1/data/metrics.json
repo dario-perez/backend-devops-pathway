@@ -1,0 +1,27 @@
+[
+    {
+        "server_name": "web-prod-01",
+        "cpu_usage": 45,
+        "status": "active"
+    },
+    {
+        "server_name": "db-prod-01",
+        "cpu_usage": 92,
+        "status": "active"
+    },
+    {
+        "server_name": "backup-srv",
+        "cpu_usage": 85,
+        "status": "maintenance"
+    },
+    {
+        "server_name": "api-gateway",
+        "cpu_usage": 81,
+        "status": "active"
+    },
+    {
+        "server_name": "test-dev-01",
+        "cpu_usage": 15,
+        "status": "active"
+    }
+]
