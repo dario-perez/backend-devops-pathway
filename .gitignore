@@ -1,1 +1,13 @@
 .vscode/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
