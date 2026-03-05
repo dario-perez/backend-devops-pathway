@@ -62,8 +62,28 @@ class DatabaseServer(Server):
       print(f"❌ Error: Cannot run query. Server {self.hostname} is OFFLINE.")
 
 
+
+class WebServer(Server):
+  def __init__(self, hostname: str, ip: str, domain):
+    super().__init__(hostname, ip)
+    self.domain = domain
+
+  def serve_content(self):
+    if self.is_online: 
+      print(f"🌐 Serving website at http://{self.domain}" )
+    else: 
+      print(f"⚠️ 404 Error: {self.domain} is unreachable.")
+
+
 if __name__ == '__main__':
-   my_db = DatabaseServer("DB-PROD", "10.0.0.5", "Sales_Data")
-   my_db.run_query("SELECT * FROM users")
-   my_db.reboot()
-   my_db.status_report()
+  my_db = DatabaseServer("DB-PROD", "10.0.0.5", "Sales_Data")
+  my_web = WebServer("WEB-FRONT", "10.0.0.8", "iconicblink.com")
+
+  my_infrastructure = [my_db, my_web]
+
+  for srv in my_infrastructure:
+    srv.status_report()
+
+  print("\n--- 🔄 Rebooting all systems ---")
+  for srv in my_infrastructure:
+    srv.reboot()
