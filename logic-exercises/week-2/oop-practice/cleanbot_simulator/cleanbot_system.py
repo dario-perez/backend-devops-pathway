@@ -12,7 +12,7 @@ class CleanBot:
     if self.position < self.path_size:
       if self.battery > 0:
         self.battery -= 10
-        self.position += 2
+        self.position += 1
       else:
         print(f"🪫 {self.name} is out of juice!")
     else:
