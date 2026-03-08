@@ -27,7 +27,7 @@ class Arena:
       self.bot_1.recharge()
       self.bot_2.recharge()
       return "⚡ Low battery! Emergency recharge initiated..."
-    
+
     distance = self.bot_2.position - self.bot_1.position
 
     if distance > 1:
@@ -36,9 +36,14 @@ class Arena:
       self.bot_2.battery -= 10
       return "The robots are approaching! ⚔️"
     else:
-      winner = random.choice([self.bot_1, self.bot_2])
-      return (f"The winner is : {winner.name}!")
-    
+      if self.bot_1.battery > self.bot_2.battery:
+        return f"The winner is : {self.bot_1.name}!"
+      elif self.bot_2.battery > self.bot_1.battery:
+        return f"The winner is : {self.bot_2.name}!"
+      else:
+        winner = random.choice([self.bot_1, self.bot_2])
+        return (f"The winner is : {winner.name}!")
+
   def __str__(self):
     arena = ["_"] * self.size
     arena[self.bot_1.position] = "🤖"
