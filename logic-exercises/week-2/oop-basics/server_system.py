@@ -16,15 +16,15 @@ class Server:
     self.is_online = False
   
   def _print_progress_bar(self, current, total, length=40):
-        '''Internal helper to render the progress bar in the console.'''
-        progress = current / total
-        filled_length = int(length * progress)
-        # Using a solid block character and a shaded one for a better look
-        bar = "█" * filled_length + "-" * (length - filled_length)
-        
-        # \r moves the cursor to the start of the line
-        sys.stdout.write(f"\rProgress: [\033[92m{bar}\033[0m] {progress*100:.0f}%")
-        sys.stdout.flush()
+    '''Internal helper to render the progress bar in the console.'''
+    progress = current / total
+    filled_length = int(length * progress)
+    # Using a solid block character and a shaded one for a better look
+    bar = "█" * filled_length + "-" * (length - filled_length)
+    
+    # \r moves the cursor to the start of the line
+    sys.stdout.write(f"\rProgress: [\033[92m{bar}\033[0m] {progress*100:.0f}%")
+    sys.stdout.flush()
 
   def status_report(self):
     status = "ONLINE" if self.is_online else "OFFLINE"
