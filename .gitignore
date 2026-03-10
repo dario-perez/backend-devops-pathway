@@ -1,4 +1,5 @@
 .vscode/
+logs/
 
 # Python bytecode
 __pycache__/

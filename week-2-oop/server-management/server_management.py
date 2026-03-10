@@ -2,7 +2,7 @@ import sys
 import time
 import random
 import datetime
-
+from pathlib import Path
 
 
 class Server:
@@ -41,8 +41,12 @@ class Server:
 
   def set_load(self, cpu_percentage: float):
     '''Sets the cpu percentage.'''
-    self.load = cpu_percentage
-    print(f"\n📊 [MONITOR] {self.hostname} load updated to {self.load}%.\n")
+    try:
+      self.load = float(cpu_percentage)
+      print(f"\n📊 [MONITOR] {self.hostname} load updated to {self.load}%.\n")
+
+    except:
+      print(f"❌ Error in {self.hostname}. Invalid load value: '{cpu_percentage}'")
 
   def get_info(self):
     '''Prints the Server info based on __str__ format.'''
@@ -88,6 +92,24 @@ class StorageServer(Server):
     return f"\nStorage Capacity: {self.capacity_gb} GB\n"
 
 
+def save_report_to_file(content):
+    '''Saves the final execution summary to a txt file in a logs folder.'''
+    script_dir = Path(__file__).resolve().parent
+    logs_dir = script_dir / "logs"
+    file_path = logs_dir / "server_report.txt"
+
+    try:
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        with open(file_path, "a", encoding="utf-8") as file:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            file.write(f"\n=== REPORT LOG: {timestamp} ===\n")
+            file.write(content)
+            file.write("\n" + "="*30 + "\n")
+        print(f"✅ Success: Report saved to {file_path}")
+    except Exception as e:
+        print(f"❌ Critical Error saving file: {e}")
+
+
 
 if __name__ == "__main__":
   servers_farm = [
@@ -103,19 +125,28 @@ if __name__ == "__main__":
 
   print(f"📊 Initializing infrastructure for {len(servers_farm)} servers...\n")
   
-  for server in servers_farm:
-    server.get_info()
+  for i, server in enumerate(servers_farm):
+    print(f"--- Processing Server {i+1}/{len(servers_farm)} ---")
+    if i % 2 == 0:
+          server.set_load(45.5)
+    else:
+        server.set_load("ERROR_DATA")
+    
     server.startup()
     server.get_info()
-    # time.sleep(0.5)
+    print("\n" + "#" * 40 + "\n")
+    time.sleep(0.3)
 
     if server.status.upper() == "ONLINE":
       online_servers += 1
     else:
       offline_servers += 1
 
-  print(
+  final_summary = (
     f"Number of Servers: {len(servers_farm)}\n"
     f"Online Servers: {online_servers}\n"
     f"Offline Servers: {offline_servers}"
   )
+
+  print(final_summary)
+  save_report_to_file(final_summary)
