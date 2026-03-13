@@ -2,19 +2,19 @@ class InfrastructureManager():
   def __init__(self):
     self.tagged_servers = {}
 
-  def add_server(self, name, tag):
+  def add_server(self, name: str, tag: str):
     if tag not in self.tagged_servers:
       self.tagged_servers[tag] = []
     if name not in self.tagged_servers[tag]:
       self.tagged_servers[tag].append(name)
   
-  def get_servers_by_tag(self, tag):
+  def get_servers_by_tag(self, tag: str):
     if tag in self.tagged_servers:
       return f"Servers with tag '{tag}': {", ".join(self.tagged_servers[tag])}"
     else:
       return f"Tag '{tag}' not found."
     
-  def remove_server(self, name, tag):
+  def remove_server(self, name: str, tag: str):
     if tag in self.tagged_servers:
       self.tagged_servers[tag].remove(name)
     if not self.tagged_servers[tag]:
