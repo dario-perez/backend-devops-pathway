@@ -1,5 +1,12 @@
+import json
 import datetime
 from pathlib import Path
+
+
+
+script_dir = Path(__file__).resolve().parent
+logs_dir = script_dir / "logs"
+file_path = logs_dir / "logs.txt"
 
 
 
@@ -33,11 +40,45 @@ class InfrastructureManager():
       if target_server != None:
         self.tagged_servers[tag].remove(target_server)
 
-  def create_log(self, content):
-    script_dir = Path(__file__).resolve().parent
-    logs_dir = script_dir / "logs"
-    file_path = logs_dir / "logs.txt"
+  def save_to_json(self, filename):
+    try:
+      data_to_save = {}
+      for tag, servers in self.tagged_servers.items():
+        list_of_servers_as_dicts = []
 
+        for s in servers:
+          list_of_servers_as_dicts.append(s.to_dict())
+
+        data_to_save[tag] = list_of_servers_as_dicts
+
+      logs_dir.mkdir(parents=True, exist_ok=True)
+      with open(logs_dir/filename, "w") as file:
+        json.dump(data_to_save, file, indent=4)
+      print(f"✅ Data persisted to {filename}\n")
+
+    except Exception as e:
+      print(f"❌ Critical Error saving file: {e}")
+
+  def load_from_json(self, filename):
+    try: 
+      with open(logs_dir/filename, "r") as file:
+        content = file.read().strip()
+        if not content:
+            print("⚠️ Warning: File is empty.")
+            return
+        json_file = json.loads(content)
+
+        for tag, dicts_list in json_file.items():
+          for server_dict in dicts_list:
+            new_srv = Server(server_dict["name"], server_dict["ip"])
+            self.add_server(new_srv, tag)
+
+        print("✅ Data loaded successfully from JSON.")
+
+    except FileNotFoundError:
+      print(f"❌ Error: {filename} not found.")
+
+  def create_log(self, content):
     try:
       logs_dir.mkdir(parents=True, exist_ok=True)
       with open(file_path, "a", encoding="utf-8") as file:
@@ -45,9 +86,19 @@ class InfrastructureManager():
         file.write(f"\n====== LOG: {timestamp} ======\n")
         file.write(content)
         file.write("\n" + "="*30 + "\n")
-        print(f"✅ Success: Report saved to {file_path}")
+        print(f"✅ Success: Report saved to {file_path}\n")
     except Exception as e:
         print(f"❌ Critical Error saving file: {e}")
+
+  def read_log(self):
+    try:
+      with open(file_path, "r") as file:
+        print(
+          f"LOG FILE ---->"
+          f"{file.read()}\n"
+        )
+    except FileNotFoundError:
+      return f"File not found"
 
   def __str__(self):
     if not self.tagged_servers:
@@ -67,6 +118,12 @@ class Server():
   def __init__(self, name: str, ip: str):
     self.name = name
     self.ip = ip
+  
+  def to_dict(self):
+    return {
+      "name": self.name,
+      "ip": self.ip
+    }
 
   def __str__(self):
     return f"- {self.name} (IP: {self.ip})\n"
@@ -74,19 +131,9 @@ class Server():
 
 
 if __name__ == "__main__":
-  manager = InfrastructureManager()
-  srv1 = Server("Srv1", "192.168.1.1")
-  srv2 = Server("Srv2", "192.168.1.2")
+    manager = InfrastructureManager()
 
-  manager.add_server(srv1, "Web")
-  manager.add_server(srv2, "Web")
+    print("--- Loading from disk ---")
+    manager.load_from_json("infrastructure.json")
 
-  print(manager.get_servers_by_tag("Web"))
-  print(manager)
-
-  final_summary = (
-    f"{manager}\n"
-    f"Tagged Servers: {manager.get_servers_by_tag("Web")}"
-  )
-
-  manager.create_log(final_summary)
+    print(manager)
