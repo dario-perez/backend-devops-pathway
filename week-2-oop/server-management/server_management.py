@@ -112,41 +112,35 @@ def save_report_to_file(content):
 
 
 if __name__ == "__main__":
-  servers_farm = [
-      Server("WEB_PROD_01", "132.0.0.10", "Coupang Frontend"),
-      DatabaseServer("DB_SQL_01", "132.0.0.20", "User Data", "PostgreSQL"),
-      StorageServer("S3_BACKUP", "132.0.0.30", "Cloud Storage", 500),
-      DatabaseServer("DB_REDIS", "132.0.0.40", "Cache System", "Redis"),
-      Server("GATEWAY_LB", "132.0.0.50", "Load Balancer")
+    servers_farm = [
+        Server("WEB_PROD_01", "132.0.0.10", "Coupang Frontend"),
+        DatabaseServer("DB_SQL_01", "132.0.0.20", "User Data", "PostgreSQL"),
+        StorageServer("S3_BACKUP", "132.0.0.30", "Cloud Storage", 500),
+        DatabaseServer("DB_REDIS", "132.0.0.40", "Cache System", "Redis"),
+        Server("GATEWAY_LB", "132.0.0.50", "Load Balancer")
     ]
   
-  online_servers = 0
-  offline_servers = 0
-
-  print(f"📊 Initializing infrastructure for {len(servers_farm)} servers...\n")
+    print(f"📊 Initializing infrastructure for {len(servers_farm)} servers...\n")
   
-  for i, server in enumerate(servers_farm):
-    print(f"--- Processing Server {i+1}/{len(servers_farm)} ---")
-    if i % 2 == 0:
-          server.set_load(45.5)
-    else:
-        server.set_load("ERROR_DATA")
+    for i, server in enumerate(servers_farm, 1):
+        print(f"--- Processing Server {i}/{len(servers_farm)} ---")
+        
+        # Optimización: Carga condicional en una sola línea
+        server.set_load(45.5 if i % 2 != 0 else "ERROR_DATA")
+        
+        server.startup()
+        server.get_info()
+        print(f"\n{'#' * 40}\n")
+        time.sleep(0.3)
+
+    # Optimización: Conteo elegante usando generadores
+    online_count = sum(1 for s in servers_farm if s.status.upper() == "ONLINE")
     
-    server.startup()
-    server.get_info()
-    print("\n" + "#" * 40 + "\n")
-    time.sleep(0.3)
+    final_summary = (
+        f"Number of Servers: {len(servers_farm)}\n"
+        f"Online Servers: {online_count}\n"
+        f"Offline Servers: {len(servers_farm) - online_count}"
+    )
 
-    if server.status.upper() == "ONLINE":
-      online_servers += 1
-    else:
-      offline_servers += 1
-
-  final_summary = (
-    f"Number of Servers: {len(servers_farm)}\n"
-    f"Online Servers: {online_servers}\n"
-    f"Offline Servers: {offline_servers}"
-  )
-
-  print(final_summary)
-  save_report_to_file(final_summary)
+    print(final_summary)
+    save_report_to_file(final_summary)
