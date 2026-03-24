@@ -1,15 +1,27 @@
+# IDEs & tools
 .vscode/
-logs/
-test.py
-server.json
+.idea/
 
-# Python bytecode
+# Logs & Debug
+logs/
+*.log
+npm-debug.log*
+
+# Configuration & Local Data
+server.json
+test.py
+
+# Python
 __pycache__/
 *.pyc
-
-# Environments
 venv/
 env/
+
+# Node / JS
+node_modules/
+dist/
+build/
+*.tsbuildinfo
 
 # OS generated files
 .DS_Store
