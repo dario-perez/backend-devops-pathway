@@ -15,7 +15,7 @@ Welcome to my personal roadmap for becoming a **Backend & DevOps Engineer**. Thi
 
 ### 🧠 Logic Exercises
 Focused on problem-solving and algorithmic thinking.
-* **Python:** *
+* **Python:**
   * `infrastructure_manager.py`: Advanced OOP exercise managing server objects with IP validation.
   * `blackjack_game.py`: Refactored game logic focusing on modularity and avoiding global scope.
   * `inventory_gap.py`: List comprehension and data comparison exercises.
