@@ -20,10 +20,17 @@ class InfrastructureManager:
             ip (str): The IP address string (will be validated by ipaddress module).
             tag (str): The category or group (e.g., 'Web', 'DB') to assign the server.
       """
-      new_server = Server(name, ip)
-      if tag not in self.servers_by_tag:
-        self.servers_by_tag[tag] = []
-      self.servers_by_tag[tag].append(new_server)
+      try:
+        if not isinstance(ip, str):
+          raise ValueError(f"IP must be a string, received '{ip}'\n")
+
+        new_server = Server(name, ip)
+        if tag not in self.servers_by_tag:
+          self.servers_by_tag[tag] = []
+        self.servers_by_tag[tag].append(new_server)
+
+      except ValueError as e:
+        print(f"Error adding server '{name}': {e}\n")
 
     def remove_server(self, name, tag):
       """
@@ -63,7 +70,7 @@ class InfrastructureManager:
 if __name__ == "__main__":
     my_manager = InfrastructureManager()
 
-    my_manager.add_server("srv-01", "192.168.1.1", "Web")
+    my_manager.add_server("srv-01", "192,168.1.1", "Web")
     my_manager.add_server("srv-02", "192.168.1.2", "DB")
     my_manager.add_server("srv-03", "192.168.1.3", "Web")
 
