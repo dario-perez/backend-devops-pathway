@@ -41,7 +41,7 @@ Stand-alone applications focused on logic and tool development.
 ---
 
 ## 👤 Contact & Connectivity
-* **LinkedIn:** [dario-perez-devops](https://www.linkedin.com/in/dario-perez-devops/)
+* **LinkedIn:** [dario-perez-dev](https://www.linkedin.com/in/dario-perez-dev/)
 * **Portfolio:** Aspiring Backend & DevOps Engineer.
 
 ---
