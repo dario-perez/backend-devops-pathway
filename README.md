@@ -7,18 +7,27 @@ Welcome to my personal roadmap for becoming a **Backend & DevOps Engineer**. Thi
 ## 🛠️ Tech Stack & Tools
 * **Languages:** Python (Primary), TypeScript (Learning)
 * **Infrastructure:** Linux (Vim/Neovim), Docker
-* **Core Concepts:** OOP, Data Structures, Network Validation (`ipaddress`), Logic Optimization
+* **Core Concepts:**
+    * **Data Validation:** Networking libraries (`ipaddress`) for infrastructure integrity.
+    * **Project Architecture:** Weekly-based progression from fundamentals to OOP.
+    * **Automation:** Logic-driven scripts for system monitoring and resource auditing.
 
 ---
 
 ## 📂 Repository Structure
 
 ### 🧠 Logic Exercises
-Focused on problem-solving and algorithmic thinking.
+Organized by language and weekly progress to track learning curves.
 * **Python:**
-  * `infrastructure_manager.py`: Advanced OOP exercise managing server objects with IP validation.
-  * `blackjack_game.py`: Refactored game logic focusing on modularity and avoiding global scope.
-  * `inventory_gap.py`: List comprehension and data comparison exercises.
+  * `week-1/`: Fundamentals, JSON management, and network health checks (e.g., `network_checker.py`, `safe_devider.py`).
+  * `week-2/`: Deep dive into OOP and Infrastructure management (e.g., `infrastructure_manager.py`, `cleanbot_system.py`).
+* **TypeScript:**
+  * `week-1/`: Initial implementations of server interfaces and inventory filters.
+
+### 🏗️ Projects
+Stand-alone applications focused on logic and tool development.
+* **Games:** `blackjack`, `scrabble`, `secret-auction`.
+* **Tools:** `caesar-cipher`, `calculator`.
 
 ---
 
