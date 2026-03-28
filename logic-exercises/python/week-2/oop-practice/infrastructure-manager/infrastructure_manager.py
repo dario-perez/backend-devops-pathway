@@ -10,6 +10,12 @@ class Server:
       self.name = name
       self.ip = ipaddress.ip_address(ip)
 
+    def to_dict(self):
+      return {
+        "name": self.name,
+        "ip": str(self.ip)
+      }
+
 class InfrastructureManager:
     def __init__(self):
       self.servers_by_tag = {}
@@ -70,6 +76,34 @@ class InfrastructureManager:
 
       except FileNotFoundError:
         print(f"❌ Error: {filename} not found.")
+
+    def save_to_json(self, filename):
+      data_to_save = {}
+      
+      for tag, server_list in self.servers_by_tag.items():
+        data_to_save[tag] = [s.to_dict() for s in server_list]
+
+      with open(file_path/filename, "w") as file:
+        json.dump(data_to_save, file, indent=4)
+
+    def json_load(self, filename):
+        try:
+            with open(file_path / filename, "r") as file:
+                content = json.load(file)
+                
+                for tag, servers in content.items():
+                    for server_data in servers:
+                        name = server_data.get("name")
+                        ip = server_data.get("ip")
+                        
+                        if name and ip:
+                            self.add_server(name, ip, tag)
+                            
+        except FileNotFoundError:
+            print(f"Error: File '{filename}' does not exist.")
+        except json.JSONDecodeError:
+            print(f"Error: File '{filename}' with JSON invalid format.")
+
     
     def __str__(self):
       """Returns a formatted report of all registered servers grouped by tag."""
