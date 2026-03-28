@@ -1,0 +1,4 @@
+srv-web-01,192.168.1.1,Web
+srv-db-01,10.0.0.5,Database
+invalid-line
+srv-cache,not-an-ip,Redis

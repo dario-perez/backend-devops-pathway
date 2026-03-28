@@ -1,11 +1,14 @@
+import json
 import ipaddress
+from pathlib import Path
+
+script_dir = Path(__file__).resolve().parent
+file_path = script_dir
 
 class Server:
     def __init__(self, name: str, ip: str):
       self.name = name
       self.ip = ipaddress.ip_address(ip)
-
-
 
 class InfrastructureManager:
     def __init__(self):
@@ -48,6 +51,25 @@ class InfrastructureManager:
 
         if not self.servers_by_tag[tag]:
           del self.servers_by_tag[tag]
+
+    def load_file(self, filename):
+      try:
+        with open(file_path/filename, "r") as file:
+          for line in file:
+            parts = line.strip().split(",")
+
+            if len(parts) != 3:
+              print(f"Skipping invalid line: {line.strip()}")
+              continue
+
+            name, ip, tag = parts
+            self.add_server(name, ip, tag)
+
+          if not file:
+            print("⚠️ Warning: File is empty.")
+
+      except FileNotFoundError:
+        print(f"❌ Error: {filename} not found.")
     
     def __str__(self):
       """Returns a formatted report of all registered servers grouped by tag."""
@@ -66,16 +88,22 @@ class InfrastructureManager:
          f"{formated_report}\n"
          "------------------------------\n"
       )
-            
+
+
+
 if __name__ == "__main__":
-    my_manager = InfrastructureManager()
+    manager = InfrastructureManager()
 
-    my_manager.add_server("srv-01", "192,168.1.1", "Web")
-    my_manager.add_server("srv-02", "192.168.1.2", "DB")
-    my_manager.add_server("srv-03", "192.168.1.3", "Web")
+    manager.add_server("srv-01", "192,168.1.1", "Web")
+    manager.add_server("srv-02", "192.168.1.2", "DB")
+    manager.add_server("srv-03", "192.168.1.3", "Web")
 
-    print(my_manager)
+    print(manager)
 
-    my_manager.remove_server("srv-03", "Web")
+    manager.remove_server("srv-03", "Web")
 
-    print(my_manager)
+    print(manager)
+
+    manager.load_file("servers.txt")
+
+    print(manager)
