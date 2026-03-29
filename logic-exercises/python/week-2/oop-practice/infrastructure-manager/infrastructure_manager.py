@@ -1,143 +1,111 @@
 import json
 import ipaddress
+from typing import Any
 from pathlib import Path
 
 script_dir = Path(__file__).resolve().parent
 file_path = script_dir
 
-class Server:
-    def __init__(self, name: str, ip: str):
-      self.name = name
-      self.ip = ipaddress.ip_address(ip)
 
-    def to_dict(self):
-      return {
-        "name": self.name,
-        "ip": str(self.ip)
-      }
+
+# --- SERVER CLASSES ---
+
+class Server:
+  def __init__(self, name: str, ip: str):
+    self.name = name
+    self.ip = ipaddress.ip_address(ip)
+
+  def to_dict(self) -> dict[str, Any]:
+    return {"name": self.name, "ip": str(self.ip)}
+
+  def get_info(self):
+    return f"Server: {self.name} | {self.ip}"
+
+
+
+class WebServer(Server):
+  def __init__(self, name: str, ip: str, port: int):
+    super().__init__(name, ip)
+    self.port = int(port)
+
+  def to_dict(self):
+    data = super().to_dict()
+    data["port"] = self.port
+    return data
+
+  def get_info(self):
+    return f"{super().get_info()} | Port: {self.port}"
+
+
+
+class DatabaseServer(Server):
+  def __init__(self, name: str, ip: str, db_engine: str):
+    super().__init__(name, ip)
+    self.db_engine = db_engine
+
+  def to_dict(self):
+    data = super().to_dict()
+    data["db_engine"] = self.db_engine
+    return data
+
+  def get_info(self):
+    return f"{super().get_info()} | Engine: {self.db_engine}"
+
+
+
+# --- INFRASTRUCTURE MANAGER ---
 
 class InfrastructureManager:
-    def __init__(self):
-      self.servers_by_tag = {}
+  def __init__(self):
+    self.servers_by_tag = {}
 
-    def add_server(self, name: str, ip: str, tag: str):
-      """
-      Creates a new Server instance and adds it to the infrastructure under a specific tag.
-        
-        Args:
-            name (str): The hostname or identifier for the server.
-            ip (str): The IP address string (will be validated by ipaddress module).
-            tag (str): The category or group (e.g., 'Web', 'DB') to assign the server.
-      """
-      try:
-        if not isinstance(ip, str):
-          raise ValueError(f"IP must be a string, received '{ip}'\n")
+  def add_server(self, name: str, ip: str, tag: str, **kwargs):
+    """
+    Supports extra arguments using **kwargs to decide which type of server to create.
+    """
+    try:
+      if "port" in kwargs:
+          new_server = WebServer(name, ip, kwargs["port"])
+      elif "db_engine" in kwargs:
+          new_server = DatabaseServer(name, ip, kwargs["db_engine"])
+      else:
+          new_server = Server(name, ip)
 
-        new_server = Server(name, ip)
-        if tag not in self.servers_by_tag:
+      if tag not in self.servers_by_tag:
           self.servers_by_tag[tag] = []
-        self.servers_by_tag[tag].append(new_server)
+      self.servers_by_tag[tag].append(new_server)
+    except Exception as e:
+        print(f"❌ Error adding server '{name}': {e}")
 
-      except ValueError as e:
-        print(f"Error adding server '{name}': {e}\n")
-
-    def remove_server(self, name, tag):
-      """
-      Removes an existing Server from the infrastructure under a specific tag and name.
-        
-        Args:
-            name (str): The hostname or identifier for the server.
-            tag (str): The category or group (e.g., 'Web', 'DB') to assign the server.
-      """
-      if tag in self.servers_by_tag:
-        for s in self.servers_by_tag[tag]:
-          if s.name == name:
-            self.servers_by_tag[tag].remove(s)
-            break
-
-        if not self.servers_by_tag[tag]:
-          del self.servers_by_tag[tag]
-
-    def load_file(self, filename):
-      try:
-        with open(file_path/filename, "r") as file:
-          for line in file:
-            parts = line.strip().split(",")
-
-            if len(parts) != 3:
-              print(f"Skipping invalid line: {line.strip()}")
-              continue
-
-            name, ip, tag = parts
-            self.add_server(name, ip, tag)
-
-          if not file:
-            print("⚠️ Warning: File is empty.")
-
-      except FileNotFoundError:
-        print(f"❌ Error: {filename} not found.")
-
-    def save_to_json(self, filename):
-      data_to_save = {}
-      
-      for tag, server_list in self.servers_by_tag.items():
-        data_to_save[tag] = [s.to_dict() for s in server_list]
-
-      with open(file_path/filename, "w") as file:
-        json.dump(data_to_save, file, indent=4)
-
-    def json_load(self, filename):
-        try:
-            with open(file_path / filename, "r") as file:
-                content = json.load(file)
-                
-                for tag, servers in content.items():
-                    for server_data in servers:
-                        name = server_data.get("name")
-                        ip = server_data.get("ip")
-                        
-                        if name and ip:
-                            self.add_server(name, ip, tag)
-                            
-        except FileNotFoundError:
-            print(f"Error: File '{filename}' does not exist.")
-        except json.JSONDecodeError:
-            print(f"Error: File '{filename}' with JSON invalid format.")
-
+  def json_load(self, filename):
+    try:
+      with open(filename, "r") as file:
+        content = json.load(file)
+        for tag, servers in content.items():
+          for s in servers:
+            self.add_server(s["name"], s["ip"], tag, **s)
     
-    def __str__(self):
-      """Returns a formatted report of all registered servers grouped by tag."""
-      report = []
-      if not self.servers_by_tag:
-        return "No servers registered."
+    except Exception as e:
+      print(f"Load error: {e}")
 
-      for tag, servers in self.servers_by_tag.items():
-        names = ", ".join(s.name for s in servers)
-        report.append(f"'{tag}': {names}")
+  def __str__(self) -> str:
+    report = ["=== Infrastructure Report ==="]
+    for tag, servers in self.servers_by_tag.items():
+      report.append(f"\n[{tag}]")
+      for s in servers:
+        report.append(f" - {s.get_info()}")
 
-      formated_report = "\n".join(report)
-      return (
-         f"=== Servers Infrastructure ===\n"
-         "------------------------------\n"
-         f"{formated_report}\n"
-         "------------------------------\n"
-      )
+    return "\n".join(report)
 
 
+
+# --- SYSTEM TESTING ---
 
 if __name__ == "__main__":
-    manager = InfrastructureManager()
+  manager = InfrastructureManager()
 
-    manager.add_server("srv-01", "192,168.1.1", "Web")
-    manager.add_server("srv-02", "192.168.1.2", "DB")
-    manager.add_server("srv-03", "192.168.1.3", "Web")
-
-    print(manager)
-
-    manager.remove_server("srv-03", "Web")
-
-    print(manager)
-
-    manager.load_file("servers.txt")
-
-    print(manager)
+  manager.add_server("Web-Srv", "1.1.1.1", "Prod", port=443)
+  manager.add_server("DB-Srv", "2.2.2.2", "Data", db_engine="PostgreSQL")
+  manager.add_server("Generic", "3.3.3.3", "Test")
+  
+  print(manager)
