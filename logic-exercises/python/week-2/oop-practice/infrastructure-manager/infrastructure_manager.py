@@ -85,8 +85,6 @@ class InfrastructureManager:
       elif "db_engine" in kwargs:
           new_srv = DatabaseServer(name, ip, kwargs["db_engine"], status)
       else:
-          # Nota: Si intentamos crear un Server() aquí, Python lanzará el TypeError 
-          # porque ahora es Abstracto. Esto nos obliga a definir el tipo.
           print(f"⚠️ Cannot create generic server for '{name}'. Must be Web or DB.")
           return None
 

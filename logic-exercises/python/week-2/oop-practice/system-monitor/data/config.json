@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Main Drive",
+    "path": "C:\\"
+  },
+  {
+    "name": "Backup Disk",
+    "path": "/mnt/backup"
+  }
+]
