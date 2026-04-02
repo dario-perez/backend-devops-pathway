@@ -32,7 +32,6 @@ class Server(ABC):
 
   def run_maintenance(self):
     return f"Server '{self.name}' is rebooting."
-  
 
 
 
