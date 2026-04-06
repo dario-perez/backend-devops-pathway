@@ -1,10 +1,10 @@
-# 🚀 Backend & DevOps Learning Pathway
+# Backend & DevOps Learning Pathway
 
 Welcome to my personal roadmap for becoming a **Backend & DevOps Engineer**. This repository serves as a living document of my technical evolution, capturing every logic exercise, architectural pattern, and automation script I develop.
 
 ---
 
-## 🛠️ Tech Stack & Tools
+## Tech Stack & Tools
 * **Languages:** Python (Primary), TypeScript (Learning)
 * **Infrastructure:** Linux (Vim/Neovim), Docker
 * **Core Concepts:**
@@ -14,9 +14,9 @@ Welcome to my personal roadmap for becoming a **Backend & DevOps Engineer**. Thi
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
-### 🧠 Logic Exercises
+### Logic Exercises
 Organized by language and weekly progress to track learning curves.
 * **Python:**
   * `week-1/`: Fundamentals, JSON management, and network health checks (e.g., `network_checker.py`, `safe_devider.py`).
@@ -24,14 +24,14 @@ Organized by language and weekly progress to track learning curves.
 * **TypeScript:**
   * `week-1/`: Initial implementations of server interfaces and inventory filters.
 
-### 🏗️ Projects
+### Projects
 Stand-alone applications focused on logic and tool development.
 * **Games:** `blackjack`, `scrabble`, `secret-auction`.
 * **Tools:** `caesar-cipher`, `calculator`.
 
 ---
 
-## 📈 Learning Milestones
+## Learning Milestones
 - [x] Python Fundamentals & Data Structures.
 - [x] Object-Oriented Programming (OOP) Deep Dive.
 - [ ] Advanced Linux Administration & Shell Scripting.
@@ -40,7 +40,7 @@ Stand-alone applications focused on logic and tool development.
 
 ---
 
-## 👤 Contact & Connectivity
+## Contact & Connectivity
 * **LinkedIn:** [dario-perez-dev](https://www.linkedin.com/in/dario-perez-dev/)
 * **Portfolio:** Aspiring Backend & DevOps Engineer.
 
