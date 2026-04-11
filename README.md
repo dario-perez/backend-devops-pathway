@@ -6,23 +6,27 @@ Welcome to my personal roadmap for becoming a **Backend & DevOps Engineer**. Thi
 
 ## Tech Stack & Tools
 * **Languages:** Python (Primary), TypeScript (Learning)
-* **Infrastructure:** Linux (Vim/Neovim), Docker
+* **Web Frameworks:** FastAPI (Currently Learning)
+* **Infrastructure:** Linux, Docker
 * **Core Concepts:**
-    * **Data Validation:** Networking libraries (`ipaddress`) for infrastructure integrity.
-    * **Project Architecture:** Weekly-based progression from fundamentals to OOP.
-    * **Automation:** Logic-driven scripts for system monitoring and resource auditing.
+    * **Data Validation:** Pydantic models and networking libraries.
+    * **Web Services:** Building RESTful APIs and CRUD operations.
+    * **Automation:** Logic-driven scripts for system monitoring.
 
 ---
 
 ## Repository Structure
 
+### Web Development (New!)
+* **FastAPI Projects:**
+  * `fastapi-server-manager/`: My first professional API structure. Implements CRUD for server inventory using Pydantic schemas.
+
 ### Logic Exercises
-Organized by language and weekly progress to track learning curves.
 * **Python:**
-  * `week-1/`: Fundamentals, JSON management, and network health checks (e.g., `network_checker.py`, `safe_devider.py`).
-  * `week-2/`: Deep dive into OOP and Infrastructure management (e.g., `infrastructure_manager.py`, `cleanbot_system.py`).
+  * `week-1/`: Fundamentals and network health checks.
+  * `week-2/`: OOP and Infrastructure management.
 * **TypeScript:**
-  * `week-1/`: Initial implementations of server interfaces and inventory filters.
+  * `week-1/`: Initial implementations of server interfaces.
 
 ### Projects
 Stand-alone applications focused on logic and tool development.
@@ -34,6 +38,7 @@ Stand-alone applications focused on logic and tool development.
 ## Learning Milestones
 - [x] Python Fundamentals & Data Structures.
 - [x] Object-Oriented Programming (OOP) Deep Dive.
+- [x] Introduction to FastAPI & REST APIs (In Progress).
 - [ ] Advanced Linux Administration & Shell Scripting.
 - [ ] Containerization with Docker & Kubernetes.
 - [ ] CI/CD Pipeline Implementation.
