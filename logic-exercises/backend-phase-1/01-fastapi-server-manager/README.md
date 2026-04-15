@@ -25,7 +25,7 @@ fastapi-server-manager/
 
 Clone the repository:
 ```bash
-git clone (https://github.com/dario-perez/backend-devops-pathway/tree/main/logic-exercises/backend-phase-1/01-fastapi-server-manager)
+git clone https://github.com/dario-perez/backend-devops-pathway/tree/main/logic-exercises/backend-phase-1/01-fastapi-server-manager
 cd fastapi-server-manager
 ```
 
