@@ -67,6 +67,7 @@ def make_coffee(choice):
         RESOURCES[ingredient] -= required
 
     money += MENU[choice]["cost"]
+    report()
     print(f"Here is your {choice.capitalize()} ☕ Enjoy!")
 
 def turn_off():
