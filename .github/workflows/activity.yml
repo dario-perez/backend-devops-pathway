@@ -1,4 +1,4 @@
-name: Profile Actividy
+name: Profile Activity
 
 on:
   schedule:
