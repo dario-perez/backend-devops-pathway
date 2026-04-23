@@ -1,4 +1,4 @@
-name: Recent Activity Update
+name: Profile Actividy
 
 on:
   schedule:
