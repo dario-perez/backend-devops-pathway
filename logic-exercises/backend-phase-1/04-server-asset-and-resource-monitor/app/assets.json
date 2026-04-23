@@ -1,0 +1,402 @@
+[
+    {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "hostname": "srv-prod-01",
+        "ip_address": "192.168.1.10",
+        "status": "Online",
+        "cpu_usage": 45.2,
+        "ram_usage": 62.8
+    },
+    {
+        "id": "71343725-3430-47b2-a4f1-67856853e201",
+        "hostname": "srv-db-01",
+        "ip_address": "10.0.0.5",
+        "status": "Online",
+        "cpu_usage": 12.5,
+        "ram_usage": 88.3
+    },
+    {
+        "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        "hostname": "web-fe-01",
+        "ip_address": "172.16.0.22",
+        "status": "Maintenance",
+        "cpu_usage": 0.0,
+        "ram_usage": 15.4
+    },
+    {
+        "id": "8b23456a-1234-4c55-9876-543210abcdef",
+        "hostname": "srv-app-02",
+        "ip_address": "192.168.1.55",
+        "status": "Offline",
+        "cpu_usage": 0.0,
+        "ram_usage": 0.0
+    },
+    {
+        "id": "a1b2c3d4-e5f6-4321-8765-098765432109",
+        "hostname": "backup-node-01",
+        "ip_address": "10.0.2.100",
+        "status": "Online",
+        "cpu_usage": 92.1,
+        "ram_usage": 40.5
+    },
+    {
+        "id": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6g",
+        "hostname": "gw-edge-01",
+        "ip_address": "2001:db8::1",
+        "status": "Online",
+        "cpu_usage": 15.7,
+        "ram_usage": 22.1
+    },
+    {
+        "id": "67c7e52b-1a92-4d7c-87b3-2e067c293792",
+        "hostname": "srv-dev-01",
+        "ip_address": "192.168.50.11",
+        "status": "Online",
+        "cpu_usage": 33.4,
+        "ram_usage": 45.9
+    },
+    {
+        "id": "3f9d5a1b-7c2e-4b8a-9d0f-1e2a3b4c5d6e",
+        "hostname": "ml-worker-01",
+        "ip_address": "10.10.10.25",
+        "status": "Online",
+        "cpu_usage": 98.9,
+        "ram_usage": 95.2
+    },
+    {
+        "id": "9a8b7c6d-5e4f-4321-9a8b-7c6d5e4f3210",
+        "hostname": "proxy-rev-01",
+        "ip_address": "172.20.1.1",
+        "status": "Online",
+        "cpu_usage": 24.6,
+        "ram_usage": 31.0
+    },
+    {
+        "id": "d1e2f3a4-b5c6-4789-a0b1-c2d3e4f5a6b7",
+        "hostname": "cache-redis-01",
+        "ip_address": "10.0.5.12",
+        "status": "Online",
+        "cpu_usage": 8.2,
+        "ram_usage": 77.4
+    },
+    {
+        "id": "b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8",
+        "hostname": "log-agg-01",
+        "ip_address": "192.168.1.90",
+        "status": "Online",
+        "cpu_usage": 56.3,
+        "ram_usage": 64.1
+    },
+    {
+        "id": "c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9",
+        "hostname": "monitor-zabbix",
+        "ip_address": "192.168.1.15",
+        "status": "Online",
+        "cpu_usage": 18.5,
+        "ram_usage": 39.7
+    },
+    {
+        "id": "d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0",
+        "hostname": "mail-relay-01",
+        "ip_address": "10.20.30.40",
+        "status": "Offline",
+        "cpu_usage": 0.0,
+        "ram_usage": 0.0
+    },
+    {
+        "id": "e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1",
+        "hostname": "vpn-ext-01",
+        "ip_address": "45.67.89.123",
+        "status": "Online",
+        "cpu_usage": 32.1,
+        "ram_usage": 28.5
+    },
+    {
+        "id": "f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2",
+        "hostname": "auth-ldap-01",
+        "ip_address": "10.0.1.5",
+        "status": "Online",
+        "cpu_usage": 5.4,
+        "ram_usage": 12.9
+    },
+    {
+        "id": "a7b8c9d0-e1f2-4345-a6b7-c8d9e0f1a2b3",
+        "hostname": "dns-prim-01",
+        "ip_address": "8.8.4.4",
+        "status": "Online",
+        "cpu_usage": 2.1,
+        "ram_usage": 8.7
+    },
+    {
+        "id": "b8c9d0e1-f2a3-4456-b7c8-d9e0f1a2b3c4",
+        "hostname": "storage-nas-01",
+        "ip_address": "192.168.10.50",
+        "status": "Maintenance",
+        "cpu_usage": 5.0,
+        "ram_usage": 10.0
+    },
+    {
+        "id": "c9d0e1f2-a3b4-4567-c8d9-e0f1a2b3c4d5",
+        "hostname": "srv-test-unit",
+        "ip_address": "172.18.0.5",
+        "status": "Online",
+        "cpu_usage": 72.8,
+        "ram_usage": 55.4
+    },
+    {
+        "id": "d0e1f2a3-b4c5-4678-d9e0-f1a2b3c4d5e6",
+        "hostname": "voip-pbx-01",
+        "ip_address": "10.5.5.5",
+        "status": "Online",
+        "cpu_usage": 14.2,
+        "ram_usage": 33.1
+    },
+    {
+        "id": "e1f2a3b4-c5d6-4789-e0f1-a2b3c4d5e6f7",
+        "hostname": "git-internal-01",
+        "ip_address": "192.168.1.200",
+        "status": "Online",
+        "cpu_usage": 3.5,
+        "ram_usage": 42.0
+    },
+    {
+        "id": "f2a3b4c5-d6e7-4890-f1a2-b3c4d5e6f7a8",
+        "hostname": "srv-prod-02",
+        "ip_address": "192.168.1.11",
+        "status": "Online",
+        "cpu_usage": 48.9,
+        "ram_usage": 59.1
+    },
+    {
+        "id": "a3b4c5d6-e7f8-4901-a2b3-c4d5e6f7a8b9",
+        "hostname": "srv-db-02",
+        "ip_address": "10.0.0.6",
+        "status": "Online",
+        "cpu_usage": 20.4,
+        "ram_usage": 85.0
+    },
+    {
+        "id": "b4c5d6e7-f8a9-4012-b3c4-d5e6f7a8b9c0",
+        "hostname": "web-fe-02",
+        "ip_address": "172.16.0.23",
+        "status": "Online",
+        "cpu_usage": 25.6,
+        "ram_usage": 44.2
+    },
+    {
+        "id": "c5d6e7f8-a9b0-4123-c4d5-e6f7a8b9c0d1",
+        "hostname": "kube-master-01",
+        "ip_address": "10.100.0.1",
+        "status": "Online",
+        "cpu_usage": 38.2,
+        "ram_usage": 70.4
+    },
+    {
+        "id": "d6e7f8a9-b0c1-4234-d5e6-f7a8b9c0d1e2",
+        "hostname": "kube-worker-01",
+        "ip_address": "10.100.0.10",
+        "status": "Online",
+        "cpu_usage": 67.4,
+        "ram_usage": 82.1
+    },
+    {
+        "id": "e7f8a9b0-c1d2-4345-e6f7-a8b9c0d1e2f3",
+        "hostname": "kube-worker-02",
+        "ip_address": "10.100.0.11",
+        "status": "Online",
+        "cpu_usage": 55.9,
+        "ram_usage": 78.3
+    },
+    {
+        "id": "f8a9b0c1-d2e3-4456-f7a8-b9c0d1e2f3a4",
+        "hostname": "srv-file-01",
+        "ip_address": "192.168.1.30",
+        "status": "Online",
+        "cpu_usage": 10.2,
+        "ram_usage": 30.5
+    },
+    {
+        "id": "a9b0c1d2-e3f4-4567-a8b9-c0d1e2f3a4b5",
+        "hostname": "srv-file-02",
+        "ip_address": "192.168.1.31",
+        "status": "Offline",
+        "cpu_usage": 0.0,
+        "ram_usage": 0.0
+    },
+    {
+        "id": "b0c1d2e3-f4a5-4678-b9c0-d1e2f3a4b5c6",
+        "hostname": "dev-box-alice",
+        "ip_address": "10.0.50.5",
+        "status": "Online",
+        "cpu_usage": 44.5,
+        "ram_usage": 56.7
+    },
+    {
+        "id": "c1d2e3f4-a5b6-4789-c0d1-e2f3a4b5c6d7",
+        "hostname": "dev-box-bob",
+        "ip_address": "10.0.50.6",
+        "status": "Online",
+        "cpu_usage": 12.1,
+        "ram_usage": 40.2
+    },
+    {
+        "id": "d2e3f4a5-b6c7-4890-d1e2-f3a4b5c6d7e8",
+        "hostname": "srv-render-01",
+        "ip_address": "192.168.20.1",
+        "status": "Online",
+        "cpu_usage": 99.8,
+        "ram_usage": 94.3
+    },
+    {
+        "id": "e3f4a5b6-c7d8-4901-e2f3-a4b5c6d7e8f9",
+        "hostname": "srv-render-02",
+        "ip_address": "192.168.20.2",
+        "status": "Online",
+        "cpu_usage": 85.4,
+        "ram_usage": 91.0
+    },
+    {
+        "id": "f4a5b6c7-d8e9-4012-f3a4-b5c6d7e8f9a0",
+        "hostname": "print-srv-01",
+        "ip_address": "192.168.1.40",
+        "status": "Online",
+        "cpu_usage": 2.3,
+        "ram_usage": 15.6
+    },
+    {
+        "id": "a5b6c7d8-e9f0-4123-a4b5-c6d7e8f9a0b1",
+        "hostname": "iot-gate-01",
+        "ip_address": "192.168.100.1",
+        "status": "Online",
+        "cpu_usage": 14.7,
+        "ram_usage": 11.2
+    },
+    {
+        "id": "b6c7d8e9-f0a1-4234-b4c5-d6e7f8a9b0c1",
+        "hostname": "srv-qa-01",
+        "ip_address": "172.25.0.10",
+        "status": "Online",
+        "cpu_usage": 33.3,
+        "ram_usage": 44.4
+    },
+    {
+        "id": "c7d8e9f0-a1b2-4345-c4d5-e6f7a8b9c0d1",
+        "hostname": "srv-qa-02",
+        "ip_address": "172.25.0.11",
+        "status": "Maintenance",
+        "cpu_usage": 1.0,
+        "ram_usage": 5.5
+    },
+    {
+        "id": "d8e9f0a1-b2c3-4456-d4e5-f6a7b8c9d0e1",
+        "hostname": "db-readonly-01",
+        "ip_address": "10.0.0.10",
+        "status": "Online",
+        "cpu_usage": 42.1,
+        "ram_usage": 60.9
+    },
+    {
+        "id": "e9f0a1b2-c3d4-4567-e4f5-a6b7c8d9e0f1",
+        "hostname": "api-gateway-prod",
+        "ip_address": "10.50.0.1",
+        "status": "Online",
+        "cpu_usage": 29.8,
+        "ram_usage": 35.6
+    },
+    {
+        "id": "f0a1b2c3-d4e5-4678-f1a2-b3c4d5e6f7a8",
+        "hostname": "worker-pool-01",
+        "ip_address": "10.50.0.10",
+        "status": "Online",
+        "cpu_usage": 65.4,
+        "ram_usage": 70.1
+    },
+    {
+        "id": "a1b2c3d4-e5f6-4789-a2b3-c4d5e6f7a8b9",
+        "hostname": "worker-pool-02",
+        "ip_address": "10.50.0.11",
+        "status": "Online",
+        "cpu_usage": 62.7,
+        "ram_usage": 68.4
+    },
+    {
+        "id": "b2c3d4e5-f6a7-4890-b3c4-d5e6f7a8b9c0",
+        "hostname": "bastion-host",
+        "ip_address": "203.0.113.5",
+        "status": "Online",
+        "cpu_usage": 1.5,
+        "ram_usage": 10.2
+    },
+    {
+        "id": "c3d4e5f6-a7b8-4901-c4d5-e6f7a8b9c0d1",
+        "hostname": "analytics-01",
+        "ip_address": "10.200.0.5",
+        "status": "Online",
+        "cpu_usage": 88.0,
+        "ram_usage": 92.5
+    },
+    {
+        "id": "d4e5f6a7-b8c9-4012-d5e6-f7a8b9c0d1e2",
+        "hostname": "analytics-02",
+        "ip_address": "10.200.0.6",
+        "status": "Online",
+        "cpu_usage": 76.4,
+        "ram_usage": 81.3
+    },
+    {
+        "id": "e5f6a7b8-c9d0-4123-e6f7-a8b9c0d1e2f3",
+        "hostname": "ftp-public",
+        "ip_address": "192.168.1.150",
+        "status": "Online",
+        "cpu_usage": 12.8,
+        "ram_usage": 24.6
+    },
+    {
+        "id": "f6a7b8c9-d0e1-4234-f7a8-b9c0d1e2f3a4",
+        "hostname": "srv-legacy-01",
+        "ip_address": "192.168.1.250",
+        "status": "Offline",
+        "cpu_usage": 0.0,
+        "ram_usage": 0.0
+    },
+    {
+        "id": "a7b8c9d0-e1f2-4345-a8b9-c0d1e2f3a4b5",
+        "hostname": "media-srv-01",
+        "ip_address": "172.16.10.5",
+        "status": "Online",
+        "cpu_usage": 45.9,
+        "ram_usage": 72.1
+    },
+    {
+        "id": "b8c9d0e1-f2a3-4456-b9c0-d1e2f3a4b5c6",
+        "hostname": "media-srv-02",
+        "ip_address": "172.16.10.6",
+        "status": "Online",
+        "cpu_usage": 33.2,
+        "ram_usage": 65.8
+    },
+    {
+        "id": "c9d0e1f2-a3b4-4567-c0d1-e2f3a4b5c6d7",
+        "hostname": "dns-sec-01",
+        "ip_address": "8.8.8.8",
+        "status": "Online",
+        "cpu_usage": 3.1,
+        "ram_usage": 9.4
+    },
+    {
+        "id": "d0e1f2a3-b4c5-4678-d1e2-f3a4b5c6d7e8",
+        "hostname": "nas-backup-02",
+        "ip_address": "192.168.10.51",
+        "status": "Online",
+        "cpu_usage": 15.0,
+        "ram_usage": 30.0
+    },
+    {
+        "id": "e1f2a3b4-c5d6-4789-e2f3-a4b5c6d7e8f9",
+        "hostname": "ws-monitor-01",
+        "ip_address": "10.0.1.20",
+        "status": "Online",
+        "cpu_usage": 22.7,
+        "ram_usage": 48.9
+    }
+]
