@@ -35,10 +35,6 @@ Stand-alone applications focused on logic and tool development.
 
 ---
 
-![GitHub Metrics](github-metrics.svg)
-
----
-
 ## Learning Milestones
 - [x] Python Fundamentals & Data Structures.
 - [x] Object-Oriented Programming (OOP) Deep Dive.
