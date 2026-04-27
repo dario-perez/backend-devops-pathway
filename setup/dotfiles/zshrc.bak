@@ -134,38 +134,139 @@ alias gcm="git commit -m"
 alias win-docs='cd /mnt/c/Users/Dario/Documents'
 # 2. New Python proyect script
 py-project() {
-    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/$1"
+    if [ -z "$1" ]; then
+	echo "Usage: py-project <project-name>"
+	return 1
+    fi
+
+    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/backend-devops-pathway/$1"
     mkdir -p "$folder/app"
-    cd "$folder"
+    cd "$folder" || { echo "Cannot access directory"; return 1; }
     python3 -m venv venv
     source venv/bin/activate
-    cd "app"
+    cd "app" || return
     echo "print('--> Starting project: $1...')" > main.py
     echo "# Notes about: $1" > README.md
+    cd "$folder" || return
+    echo -e "venv/\n__pycache__/\n*.pyc\n.env" > .gitignore
+    git init &>/dev/null
     echo "✅ Enviroment ready at: $folder"
 }
 # 3. New backend project script
 mkapi() {
-    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/$1"
+    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/backend-devops-pathway/$1"
     mkdir -p "$folder/app"
-    cd "$folder"
+    cd "$folder" || { echo "Error: cannot access directory"; return 1; }
     python3 -m venv venv
     source venv/bin/activate
     pip install fastapi uvicorn
-    cd "app"
-    touch main.py README.md
+    cd "app" || return
+    cat > main.py << 'EOF'
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI!"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+EOF
+
+
+    # README
+    cat > README.md << 'EOF'
+# FastAPI Project
+
+## Run
+
+```bash
+uvicorn app.main:app --reload
+EOF
+
+    cd "$folder" || return
+    cat > .gitignore << 'EOF'
+# Python
+pycache/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+
+# Environment
+.env
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+EOF
+
+git init &/dev/null
+
     echo "✅ FastAPI enviroment creted at $folder"
 }
 # 4. Github sync script
-save() {
+gsave() {
     if [ -z "$1" ]; then
-        echo "❌ Error: Message for commit is required. Use: save 'message'"
-    else 
-        git add .
-        git commit -m "$1"
-        git push
-        echo "--> Successfully uploaded to GitHub."
+        echo "Usage: save 'commit message'"
+	return 1
     fi
+
+    if git diff --quiet && git diff --cached --quiet; then
+	echo "No changes to commit"
+	return 0
+    fi
+
+    git add .
+
+    if ! git commit -m "$1"; then
+	echo "Commit failed"
+	return 1
+    fi
+
+    branch=$(git branch --show-current)
+
+    if ! git push 2>/dev/null; then
+	git push -u origin "$branch"
+    fi
+
+    echo "✅ Successfully pushed to GitHub"
+}
+# .5 Observability monitor
+health-check() {
+    ram_usage=$(free |  awk '/Mem:/ {print int($3/$2 * 100)}')
+
+    cpu_load=$(awk '{print $1}' /proc/loadavg)
+    cpu_cores=$(nproc)
+    cpu_usage=$(awk -v load="$cpu_load" -v cores="$cpu_cores" 'BEGIN {print int((load/cores)*100)}')
+
+    disk_usage=$(df / | awk 'END {print int($5)}')
+
+    echo "──────────────────────────────────────────────────"
+    echo "SYSTEM HEALTH REPORT | $(date +'%B %d - %Y | %H:%M:%S')"
+
+    print_status() {
+        local label=$1
+        local value=$2
+        if [ "$value" -ge 80 ]; then
+            echo -e "$label: \e[31m$value%\e[0m (CRITICAL)"
+        elif [ "$value" -ge 70 ]; then
+            echo -e "$label: \e[33m$value%\e[0m (WARNING)"
+	else
+	    echo -e "$label: \e[32m$value%\e[0m (OK)"
+        fi
+    }
+
+    print_status "RAM" "$ram_usage"
+    print_status "CPU" "$cpu_usage"
+    print_status "Disk" "$disk_usage"
+    echo "──────────────────────────────────────────────────"
 }
 
 eval "$(starship init zsh)"
