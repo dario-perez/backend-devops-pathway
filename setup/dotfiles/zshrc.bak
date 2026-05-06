@@ -123,6 +123,7 @@ alias update-all='sudo apt update && sudo apt upgrade -y'
 alias c="clear"
 alias health="echo 'Memoria:'; free -h | grep Mem; echo 'Disco:'; df -h / | grep /"
 alias update="sudo apt update && sudo apt upgrade -y"
+alias pathway="cd ~/projects/backend-devops-pathway"
 alias vsc="code ." # Opens VS Code
 
 # --- GIT SHORTCUTS ---
@@ -139,7 +140,7 @@ py-project() {
 	return 1
     fi
 
-    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/backend-devops-pathway/$1"
+    local folder="$HOME/projects/backend-devops-pathway/$1"
     mkdir -p "$folder/app"
     cd "$folder" || { echo "Cannot access directory"; return 1; }
     python3 -m venv venv
@@ -154,7 +155,7 @@ py-project() {
 }
 # 3. New backend project script
 mkapi() {
-    local folder="$HOME/win-docs/1.0dev/backend-devops-practice/backend-devops-pathway/$1"
+    local folder="$HOME/projects/backend-devops-pathway/$1"
     mkdir -p "$folder/app"
     cd "$folder" || { echo "Error: cannot access directory"; return 1; }
     python3 -m venv venv
