@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+
+BASE="$HOME/projects/backend-devops-pathway"
+
+# =========================================================
+# CREATE PYTHON PROJECT
+# =========================================================
+create_python_project() {
+    local name=$1
+
+    if [ -z "$name" ]; then
+        echo "Usage: dev new python <project-name>"
+        exit 1
+    fi
+
+    local folder="$BASE/$name"
+
+    mkdir -p "$folder/app"
+    cd "$folder" || exit 1
+
+    python3 -m venv venv
+    source venv/bin/activate
+
+    cd app || exit 1
+
+    echo "print('--> Starting project: $name')" > main.py
+    echo "# Notes about: $name" > README.md
+
+    cd "$folder" || exit 1
+
+    cat > .gitignore << 'EOF'
+venv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+EOF
+
+    git init &>/dev/null
+    git add .
+    git commit -m "Initial Python project" &>/dev/null
+
+    echo "✅ Python project ready: $folder"
+}
+
+# =========================================================
+# CREATE FASTAPI PROJECT
+# =========================================================
+create_api_project() {
+    local name=$1
+
+    if [ -z "$name" ]; then
+        echo "Usage: dev new api <project-name>"
+        exit 1
+    fi
+
+    local folder="$BASE/$name"
+
+    mkdir -p "$folder/app"
+    cd "$folder" || exit 1
+
+    python3 -m venv venv
+    source venv/bin/activate
+
+    pip install fastapi uvicorn &>/dev/null
+
+    cd app || exit 1
+
+    cat > main.py << 'EOF'
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "Hello FastAPI"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+EOF
+
+    cat > README.md << 'EOF'
+# FastAPI Project
+
+## Run
+
+uvicorn app.main:app --reload
+EOF
+
+    cd "$folder" || exit 1
+
+    cat > .gitignore << 'EOF'
+venv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+EOF
+
+    git init &>/dev/null
+    git add .
+    git commit -m "Initial FastAPI project" &>/dev/null
+
+    echo "✅ FastAPI project ready: $folder"
+}
+
+# =========================================================
+# GIT SAVE
+# =========================================================
+git_save() {
+    if [ -z "$1" ]; then
+        echo "Usage: dev save 'message'"
+        exit 1
+    fi
+
+    if git diff --quiet && git diff --cached --quiet; then
+        echo "No changes to commit"
+        exit 0
+    fi
+
+    git add .
+
+    if ! git commit -m "$1"; then
+        echo "Commit failed"
+        exit 1
+    fi
+
+    local branch
+    branch=$(git branch --show-current)
+
+    if ! git push 2>/dev/null; then
+        git push -u origin "$branch"
+    fi
+
+    echo "✅ Changes pushed"
+}
+
+# =========================================================
+# SYSTEM HEALTH
+# =========================================================
+health_check() {
+    local ram_usage
+    local cpu_load
+    local cpu_cores
+    local cpu_usage
+    local disk_usage
+
+    ram_usage=$(free | awk '/Mem:/ {print int($3/$2 * 100)}')
+
+    cpu_load=$(awk '{print $1}' /proc/loadavg)
+    cpu_cores=$(nproc)
+
+    cpu_usage=$(awk -v load="$cpu_load" -v cores="$cpu_cores" 'BEGIN {print int((load/cores)*100)}')
+
+    disk_usage=$(df / | awk 'END {print int($5)}')
+
+    echo "──────────────────────────────────────────────────"
+    echo "SYSTEM HEALTH REPORT | $(date +'%B %d - %Y | %H:%M:%S')"
+    echo "──────────────────────────────────────────────────"
+
+    print_status() {
+        local label=$1
+        local value=$2
+
+        if [ "$value" -ge 80 ]; then
+            echo -e "$label: \e[31m$value%\e[0m (CRITICAL)"
+        elif [ "$value" -ge 70 ]; then
+            echo -e "$label: \e[33m$value%\e[0m (WARNING)"
+        else
+            echo -e "$label: \e[32m$value%\e[0m (OK)"
+        fi
+    }
+
+    print_status "RAM" "$ram_usage"
+    print_status "CPU" "$cpu_usage"
+    print_status "Disk" "$disk_usage"
+
+    echo "──────────────────────────────────────────────────"
+}
+
+# =========================================================
+# HELP
+# =========================================================
+dev-help() {
+    echo ""
+    echo "DEV TOOLKIT"
+    echo ""
+    echo "Usage:"
+    echo "  dev new python <name>"
+    echo "  dev new api <name>"
+    echo "  dev save 'message'"
+    echo "  dev health"
+    echo ""
+}
+
+# =========================================================
+# COMMAND ROUTER
+# =========================================================
+case "$1" in
+    new)
+        case "$2" in
+            python)
+                create_python_project "$3"
+                ;;
+            api)
+                create_api_project "$3"
+                ;;
+            *)
+                show_help
+                ;;
+        esac
+        ;;
+    save)
+        git_save "$2"
+        ;;
+    health)
+        health_check
+        ;;
+    *)
+        show_help
+        ;;
+esac
