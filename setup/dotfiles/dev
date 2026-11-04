@@ -1,115 +1,1130 @@
 #!/usr/bin/env bash
 
-BASE="$HOME/projects/backend-devops-pathway"
+BASE="${DEV_REPO:-$HOME/Documents/study/backend-devops-pathway}"
+PROJECTS_DIR="${PROJECTS_DIR:-$HOME/Documents/study/projects}"
+LOG_FILE="${DEV_LOG:-$BASE/docs/worklog.md}"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/Backups}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
 
-# =========================================================
-# CREATE PYTHON PROJECT
-# =========================================================
-create_python_project() {
-    local name=$1
-
-    if [ -z "$name" ]; then
-        echo "Usage: dev new python <project-name>"
-        exit 1
-    fi
-
-    local folder="$BASE/$name"
-
-    mkdir -p "$folder/app"
-    cd "$folder" || exit 1
-
-    python3 -m venv venv
-    source venv/bin/activate
-
-    cd app || exit 1
-
-    echo "print('--> Starting project: $name')" > main.py
-    echo "# Notes about: $name" > README.md
-
-    cd "$folder" || exit 1
-
-    cat > .gitignore << 'EOF'
-venv/
-__pycache__/
-*.pyc
-.env
-.vscode/
-EOF
-
-    git init &>/dev/null
-    git add .
-    git commit -m "Initial Python project" &>/dev/null
-
-    echo "✅ Python project ready: $folder"
+has() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# =========================================================
-# CREATE FASTAPI PROJECT
-# =========================================================
-create_api_project() {
-    local name=$1
+info() {
+    printf '%s\n' "$*"
+}
 
-    if [ -z "$name" ]; then
-        echo "Usage: dev new api <project-name>"
-        exit 1
+warn() {
+    printf '[WARN] %s\n' "$*" >&2
+}
+
+die() {
+    printf '[ERROR] %s\n' "$*" >&2
+    exit 1
+}
+
+confirm() {
+    local reply
+    read -r -p "$1 [y/N] " reply
+    [[ "$reply" =~ ^[yY]$ ]]
+}
+
+usage() {
+    cat <<'EOF'
+DEV TOOLKIT
+
+Usage:
+  dev new python <name>     Create a Python project in PROJECTS_DIR
+  dev new api <name>        Create a FastAPI + Docker project
+  dev init [dir]            Add git, README, env example, pre-commit
+  dev run [dir]             Activate the venv and run the app
+  dev test [dir]            Run pytest
+  dev lint [dir]            Run ruff check
+  dev fmt [dir]             Run ruff format
+  dev up [dir]              docker compose up -d --build
+  dev down [dir]            docker compose down
+  dev db [dir]              Start the compose db and wait for readiness
+  dev ship [message]        Lint, test, commit, push, and open a PR
+  dev status [dir]          Git branch, sync state, last commit, PR
+  dev clean [dir]           Remove caches (--venv, --docker, -y)
+  dev doctor                Check tools, Docker, GitHub auth, disk
+  dev secrets [dir]         Scan for secrets (gitleaks/trufflehog/rg)
+  dev backup [dir]          Dump the compose DB or archive the project
+  dev log <message>         Append a timestamped work log entry
+  dev roadmap               Show milestones and unchecked items
+  dev save <message>        Add, commit, and push all changes
+  dev health                Show RAM, CPU, and disk usage
+  dev help                  Show this help
+
+Environment:
+  DEV_REPO                  Curriculum repo root
+  PROJECTS_DIR              Where new projects are created
+  DEV_LOG                   Work log path
+  BACKUP_DIR                Backup destination
+  PYTHON_VERSION            Preferred Python version (default: 3.13)
+  DEV_SKIP_INSTALL=1        Skip dependency installation in generators
+  SKIP_CHECKS=1             Skip lint/test in dev ship
+EOF
+}
+
+validate_name() {
+    [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]] || die "Invalid project name: $1"
+}
+
+pick_python() {
+    if has "python${PYTHON_VERSION}"; then
+        printf 'python%s' "$PYTHON_VERSION"
+    elif has python3; then
+        printf 'python3'
+    else
+        printf ''
+    fi
+}
+
+create_venv() {
+    local folder=$1
+    local old=$PWD
+    cd "$folder" || return 1
+
+    if has uv; then
+        if uv venv --python "$PYTHON_VERSION" .venv >/dev/null 2>&1; then
+            info "[OK] .venv created with uv (Python $PYTHON_VERSION)"
+        elif uv venv .venv >/dev/null 2>&1; then
+            warn "Python $PYTHON_VERSION unavailable to uv; created .venv with default"
+        else
+            cd "$old" || return 1
+            die "uv could not create .venv"
+        fi
+    else
+        local py
+        py=$(pick_python)
+        [[ -n "$py" ]] || {
+            cd "$old" || return 1
+            die "python3 is required"
+        }
+        if [[ "$py" != "python${PYTHON_VERSION}" ]]; then
+            warn "python${PYTHON_VERSION} not found; using $py"
+        fi
+        "$py" -m venv .venv || {
+            cd "$old" || return 1
+            die "Failed to create .venv"
+        }
+        info "[OK] .venv created with $py"
     fi
 
-    local folder="$BASE/$name"
+    cd "$old" || return 1
+}
 
-    mkdir -p "$folder/app"
-    cd "$folder" || exit 1
+activate_venv() {
+    local folder=$1
 
-    python3 -m venv venv
-    source venv/bin/activate
+    if [[ -f "$folder/.venv/bin/activate" ]]; then
+        source "$folder/.venv/bin/activate"
+    elif [[ -f "$folder/venv/bin/activate" ]]; then
+        source "$folder/venv/bin/activate"
+    else
+        return 1
+    fi
+}
 
-    pip install fastapi uvicorn &>/dev/null
+ensure_venv() {
+    local folder=$1
 
-    cd app || exit 1
+    if ! activate_venv "$folder"; then
+        warn "No virtual environment found; creating one"
+        create_venv "$folder"
+        activate_venv "$folder" || die "Could not activate .venv"
+    fi
+}
 
-    cat > main.py << 'EOF'
-from fastapi import FastAPI
+install_deps() {
+    local folder=$1
+    shift
+    local old=$PWD
+    cd "$folder" || return 1
 
-app = FastAPI()
+    if has uv; then
+        uv pip install --python .venv/bin/python "$@" || warn "Dependency install failed"
+    else
+        source .venv/bin/activate
+        python -m pip install --upgrade pip >/dev/null 2>&1 || true
+        pip install "$@" || warn "Dependency install failed"
+        deactivate 2>/dev/null || true
+    fi
+
+    cd "$old" || return 1
+}
+
+git_init_commit() {
+    local folder=$1
+    local message=$2
+    local old=$PWD
+    cd "$folder" || return 1
+
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        git init -q
+    fi
+
+    git add .
+
+    if git diff --cached --quiet; then
+        info "No changes to commit"
+    else
+        git commit -q -m "$message" || warn "git commit failed; configure user.name and user.email"
+    fi
+
+    cd "$old" || return 1
+}
+
+create_python_project() {
+    local name="${1:-}"
+    [[ -n "$name" ]] || die "Usage: dev new python <project-name>"
+    validate_name "$name"
+
+    local folder="$PROJECTS_DIR/$name"
+    [[ -e "$folder" ]] && die "Project already exists: $folder"
+
+    mkdir -p "$folder/app" "$folder/tests"
+    create_venv "$folder"
+
+    : > "$folder/app/__init__.py"
+
+    cat > "$folder/app/main.py" <<'EOF'
+def main():
+    print("Hello from the project")
+
+
+if __name__ == "__main__":
+    main()
+EOF
+
+    cat > "$folder/tests/test_main.py" <<'EOF'
+from app.main import main
+
+
+def test_main(capsys):
+    main()
+    assert "Hello" in capsys.readouterr().out
+EOF
+
+    cat > "$folder/README.md" <<EOF
+# $name
+
+Python project generated by \`dev new python\`.
+
+## Setup
+
+\`\`\`bash
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+\`\`\`
+
+## Run
+
+\`\`\`bash
+python -m app.main
+\`\`\`
+
+## Test
+
+\`\`\`bash
+pytest -q
+\`\`\`
+EOF
+
+    cat > "$folder/.gitignore" <<'EOF'
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.env
+.vscode/
+.idea/
+.DS_Store
+EOF
+
+    cat > "$folder/pyproject.toml" <<EOF
+[project]
+name = "$name"
+version = "0.1.0"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+EOF
+
+    cat > "$folder/requirements-dev.txt" <<'EOF'
+pytest>=8
+ruff>=0.8
+pre-commit>=4
+EOF
+
+    if [[ "${DEV_SKIP_INSTALL:-0}" != "1" ]]; then
+        install_deps "$folder" -r requirements-dev.txt
+    else
+        warn "Skipping dependency install (DEV_SKIP_INSTALL=1)"
+    fi
+
+    git_init_commit "$folder" "Initial Python project"
+
+    info "[OK] Python project ready: $folder"
+}
+
+create_api_project() {
+    local name="${1:-}"
+    [[ -n "$name" ]] || die "Usage: dev new api <project-name>"
+    validate_name "$name"
+
+    local folder="$PROJECTS_DIR/$name"
+    [[ -e "$folder" ]] && die "Project already exists: $folder"
+
+    mkdir -p "$folder/app" "$folder/tests" "$folder/.github/workflows"
+    create_venv "$folder"
+
+    : > "$folder/app/__init__.py"
+
+    cat > "$folder/app/config.py" <<EOF
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "$name"
+    database_url: str = "sqlite:///./app.db"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
+settings = Settings()
+EOF
+
+    cat > "$folder/app/db.py" <<'EOF'
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from .config import settings
+
+connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+engine = create_engine(settings.database_url, connect_args=connect_args)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+EOF
+
+    cat > "$folder/app/models.py" <<'EOF'
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .db import Base
+
+
+class Item(Base):
+    __tablename__ = "items"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), index=True)
+EOF
+
+    cat > "$folder/app/schemas.py" <<'EOF'
+from pydantic import BaseModel, ConfigDict
+
+
+class ItemCreate(BaseModel):
+    name: str
+
+
+class ItemRead(ItemCreate):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+EOF
+
+    cat > "$folder/app/main.py" <<EOF
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
+from sqlalchemy.orm import Session
+
+from . import models, schemas
+from .db import Base, engine, get_db
+
+app = FastAPI(title="$name")
+Base.metadata.create_all(bind=engine)
+
 
 @app.get("/")
 def root():
-    return {"message": "Hello FastAPI"}
+    return {"message": "$name", "status": "ok"}
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/items", response_model=list[schemas.ItemRead])
+def list_items(db: Annotated[Session, Depends(get_db)]):
+    return db.query(models.Item).all()
+
+
+@app.post("/items", response_model=schemas.ItemRead, status_code=201)
+def create_item(payload: schemas.ItemCreate, db: Annotated[Session, Depends(get_db)]):
+    item = models.Item(name=payload.name)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
 EOF
 
-    cat > README.md << 'EOF'
-# FastAPI Project
+    cat > "$folder/tests/test_health.py" <<'EOF'
+from fastapi.testclient import TestClient
 
-## Run
+from app.main import app
 
-uvicorn app.main:app --reload
+client = TestClient(app)
+
+
+def test_health():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 EOF
 
-    cd "$folder" || exit 1
+    cat > "$folder/requirements.txt" <<'EOF'
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0
+pydantic-settings>=2.0
+psycopg[binary]>=3.2
+EOF
 
-    cat > .gitignore << 'EOF'
+    cat > "$folder/requirements-dev.txt" <<'EOF'
+-r requirements.txt
+pytest>=8
+httpx>=0.27
+ruff>=0.8
+pre-commit>=4
+EOF
+
+    cat > "$folder/pyproject.toml" <<EOF
+[project]
+name = "$name"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+EOF
+
+    cat > "$folder/.gitignore" <<'EOF'
+.venv/
 venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 .env
+*.db
 .vscode/
+.idea/
+.DS_Store
 EOF
 
-    git init &>/dev/null
-    git add .
-    git commit -m "Initial FastAPI project" &>/dev/null
+    cat > "$folder/.env.example" <<EOF
+APP_NAME=$name
+DATABASE_URL=sqlite:///./app.db
 
-    echo "✅ FastAPI project ready: $folder"
+# Docker Compose override:
+# DATABASE_URL=postgresql+psycopg://app:app@db:5432/app
+EOF
+
+    cat > "$folder/Dockerfile" <<'EOF'
+FROM python:3.13-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app ./app
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EOF
+
+    cat > "$folder/compose.yaml" <<'EOF'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:app@db:5432/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+EOF
+
+    cat > "$folder/Makefile" <<'EOF'
+.PHONY: install run test lint fmt up down db
+
+install:
+	pip install -r requirements-dev.txt
+
+run:
+	uvicorn app.main:app --reload
+
+test:
+	pytest -q
+
+lint:
+	ruff check .
+
+fmt:
+	ruff format .
+
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+db:
+	docker compose up -d db
+EOF
+
+    cat > "$folder/.pre-commit-config.yaml" <<'EOF'
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+EOF
+
+    cat > "$folder/.github/workflows/ci.yml" <<'EOF'
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+      - name: Test
+        run: pytest -q
+EOF
+
+    cat > "$folder/README.md" <<EOF
+# $name
+
+FastAPI project generated by \`dev new api\`.
+
+## Layout
+
+- \`app/\` - FastAPI app, settings, database, models, schemas
+- \`tests/\` - pytest suite
+- \`Dockerfile\` and \`compose.yaml\` - API + Postgres
+- \`.github/workflows/ci.yml\` - lint and test on push
+- \`.pre-commit-config.yaml\` - ruff hooks
+
+## Local development
+
+\`\`\`bash
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload
+\`\`\`
+
+Open http://127.0.0.1:8000/docs
+
+## Docker
+
+\`\`\`bash
+docker compose up -d --build
+curl http://127.0.0.1:8000/health
+docker compose down
+\`\`\`
+
+## Checks
+
+\`\`\`bash
+ruff check .
+pytest -q
+\`\`\`
+EOF
+
+    if [[ "${DEV_SKIP_INSTALL:-0}" != "1" ]]; then
+        install_deps "$folder" -r requirements-dev.txt
+    else
+        warn "Skipping dependency install (DEV_SKIP_INSTALL=1)"
+    fi
+
+    git_init_commit "$folder" "Initial FastAPI project"
+
+    if has pre-commit; then
+        (cd "$folder" && pre-commit install >/dev/null 2>&1) &&
+            info "[OK] pre-commit hook installed" ||
+            warn "pre-commit hook could not be installed"
+    fi
+
+    info "[OK] FastAPI project ready: $folder"
 }
 
-# =========================================================
-# GIT SAVE
-# =========================================================
+init_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        git init -q
+        info "[OK] git initialized"
+    fi
+
+    if [[ ! -f .gitignore ]]; then
+        cat > .gitignore <<'EOF'
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.env
+*.db
+.vscode/
+.idea/
+.DS_Store
+EOF
+        info "[OK] .gitignore created"
+    fi
+
+    if [[ ! -f README.md ]]; then
+        printf '# %s\n\nProject notes.\n' "$(basename "$PWD")" > README.md
+        info "[OK] README.md created"
+    fi
+
+    if [[ ! -f .env.example ]]; then
+        printf '# Copy to .env and fill in values\n' > .env.example
+        info "[OK] .env.example created"
+    fi
+
+    if [[ ! -f .pre-commit-config.yaml ]]; then
+        cat > .pre-commit-config.yaml <<'EOF'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+EOF
+        info "[OK] .pre-commit-config.yaml created"
+    fi
+
+    if has pre-commit; then
+        pre-commit install >/dev/null 2>&1 &&
+            info "[OK] pre-commit hook installed" ||
+            warn "pre-commit hook could not be installed"
+    fi
+
+    if ! git rev-parse HEAD >/dev/null 2>&1; then
+        git add .
+        git commit -q -m "Initial commit" ||
+            warn "Initial commit failed; configure user.name and user.email"
+    fi
+
+    info "[OK] project initialized: $PWD"
+}
+
+run_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+    ensure_venv "$folder"
+
+    if [[ -f app/main.py ]] && grep -q 'FastAPI' app/main.py; then
+        has uvicorn || die "uvicorn is not installed; run pip install -r requirements-dev.txt"
+        local port="${PORT:-8000}"
+        info "Starting FastAPI on http://127.0.0.1:$port"
+        exec uvicorn app.main:app --reload --host 127.0.0.1 --port "$port"
+    elif [[ -f app/main.py ]]; then
+        info "Starting app.main"
+        exec python -m app.main
+    elif [[ -f main.py ]]; then
+        info "Starting main.py"
+        exec python main.py
+    else
+        die "No app/main.py or main.py found in $folder"
+    fi
+}
+
+test_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+    ensure_venv "$folder"
+
+    if has pytest; then
+        pytest -q
+    elif has uv; then
+        uv run pytest -q
+    else
+        die "pytest is not installed; run pip install -r requirements-dev.txt"
+    fi
+}
+
+lint_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+    ensure_venv "$folder"
+
+    if has ruff; then
+        ruff check .
+    elif has uv; then
+        uv run ruff check .
+    else
+        die "ruff is not installed; run pip install -r requirements-dev.txt"
+    fi
+}
+
+fmt_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+    ensure_venv "$folder"
+
+    if has ruff; then
+        ruff format .
+    elif has black; then
+        black .
+    elif has uv; then
+        uv run ruff format .
+    else
+        die "ruff is not installed; run pip install -r requirements-dev.txt"
+    fi
+}
+
+up_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    if docker compose version >/dev/null 2>&1; then
+        docker compose up -d --build
+        docker compose ps
+    elif has docker-compose; then
+        docker-compose up -d --build
+        docker-compose ps
+    else
+        die "Docker Compose is not available"
+    fi
+}
+
+down_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    if docker compose version >/dev/null 2>&1; then
+        docker compose down
+    elif has docker-compose; then
+        docker-compose down
+    else
+        die "Docker Compose is not available"
+    fi
+}
+
+db_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    if [[ ! -f compose.yaml && ! -f docker-compose.yml ]]; then
+        die "No compose.yaml or docker-compose.yml in $folder"
+    fi
+
+    if docker compose version >/dev/null 2>&1; then
+        docker compose up -d db
+        local i
+        for i in $(seq 1 30); do
+            if docker compose exec -T db pg_isready -U "${POSTGRES_USER:-app}" >/dev/null 2>&1; then
+                info "[OK] database ready"
+                return 0
+            fi
+            sleep 2
+        done
+    else
+        die "Docker Compose is not available"
+    fi
+
+    warn "Database did not become ready within 60 seconds"
+    return 1
+}
+
+ship() {
+    local message="${1:-}"
+    git rev-parse --git-dir >/dev/null 2>&1 || die "Not a git repository"
+
+    if [[ -z "$message" ]]; then
+        message="chore: update $(date +%F)"
+    fi
+
+    if [[ "${SKIP_CHECKS:-0}" != "1" ]]; then
+        lint_project "$PWD" || die "Lint failed"
+        test_project "$PWD" || die "Tests failed"
+    fi
+
+    if git diff --quiet && git diff --cached --quiet; then
+        info "No changes to commit"
+    else
+        git add -A
+        git commit -m "$message" || die "Commit failed"
+    fi
+
+    local branch
+    branch=$(git branch --show-current)
+
+    if ! git push 2>/dev/null; then
+        git push -u origin "$branch" || die "Push failed"
+    fi
+
+    if has gh; then
+        if [[ "$branch" != "main" && "$branch" != "master" ]]; then
+            gh pr create --fill || warn "PR creation failed (maybe a PR already exists)"
+        else
+            warn "On $branch; skipped PR creation"
+        fi
+    fi
+
+    info "[OK] shipped branch $branch"
+}
+
+status_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+    git rev-parse --git-dir >/dev/null 2>&1 || die "Not a git repository"
+
+    git status -sb
+
+    local branch upstream
+    branch=$(git branch --show-current)
+    info "Branch: $branch"
+
+    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+    if [[ -n "$upstream" ]]; then
+        local behind ahead
+        read -r behind ahead < <(git rev-list --left-right --count '@{u}...HEAD')
+        info "Upstream: $upstream (behind $behind, ahead $ahead)"
+    else
+        warn "No upstream branch configured"
+    fi
+
+    git log -1 --oneline
+
+    if has gh; then
+        gh pr status 2>/dev/null | sed -n '1,20p' || true
+    fi
+}
+
+clean_project() {
+    local assume_yes=0
+    local remove_venv=0
+    local remove_docker=0
+    local folder="$PWD"
+    local arg
+
+    for arg in "$@"; do
+        case "$arg" in
+            -y|--yes) assume_yes=1 ;;
+            --venv) remove_venv=1 ;;
+            --docker) remove_docker=1 ;;
+            -*) die "Unknown option: $arg" ;;
+            *) folder="$arg" ;;
+        esac
+    done
+
+    cd "$folder" || die "Cannot enter $folder"
+
+    if (( ! assume_yes )); then
+        confirm "Remove Python caches and build artifacts in $folder?" || {
+            info "Cancelled"
+            return 0
+        }
+    fi
+
+    find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache -o -name .mypy_cache \) -prune -exec rm -rf {} +
+    find . -type f -name '*.pyc' -delete
+    rm -rf build dist .coverage htmlcov
+    info "[OK] caches removed"
+
+    if (( remove_venv )); then
+        rm -rf .venv venv
+        info "[OK] virtual environments removed"
+    fi
+
+    if (( remove_docker )); then
+        if has docker; then
+            docker image prune -f
+        else
+            warn "docker is not installed"
+        fi
+    fi
+}
+
+check_cmd() {
+    local label=$1
+    shift
+
+    if "$@" >/dev/null 2>&1; then
+        local version
+        version=$("$@" 2>&1 | head -n 1)
+        printf '  [OK]   %-16s %s\n' "$label" "$version"
+    else
+        printf '  [MISS] %-16s\n' "$label"
+    fi
+}
+
+doctor() {
+    info "DEV DOCTOR"
+    info "----------"
+
+    check_cmd git git --version
+    check_cmd python3 python3 --version
+    check_cmd "python$PYTHON_VERSION" "python$PYTHON_VERSION" --version
+    check_cmd uv uv --version
+    check_cmd docker docker --version
+    check_cmd "docker compose" docker compose version
+    check_cmd gh gh --version
+    check_cmd ruff ruff --version
+    check_cmd pytest pytest --version
+    check_cmd pre-commit pre-commit --version
+    check_cmd gitleaks gitleaks version
+    check_cmd jq jq --version
+    check_cmd kubectl kubectl version --client
+    check_cmd terraform terraform version
+    check_cmd ansible ansible --version
+
+    info ""
+    info "RUNTIME"
+    info "-------"
+
+    if has docker && docker info >/dev/null 2>&1; then
+        info "  [OK]   Docker daemon reachable"
+    else
+        info "  [WARN] Docker daemon not reachable"
+    fi
+
+    if has gh && gh auth status >/dev/null 2>&1; then
+        info "  [OK]   GitHub CLI authenticated"
+    else
+        info "  [WARN] GitHub CLI not authenticated"
+    fi
+
+    if has systemctl; then
+        local failed
+        failed=$(systemctl --failed --no-legend 2>/dev/null | wc -l)
+        if [[ "$failed" -eq 0 ]]; then
+            info "  [OK]   No failed systemd units"
+        else
+            info "  [WARN] $failed failed systemd units"
+        fi
+    fi
+
+    info ""
+    info "DISK"
+    info "----"
+    df -h / | sed -n '1,2p'
+
+    info ""
+    info "PROJECTS"
+    info "--------"
+    info "  DEV_REPO:     $BASE"
+    info "  PROJECTS_DIR: $PROJECTS_DIR"
+    info "  DEV_LOG:      $LOG_FILE"
+    info "  BACKUP_DIR:   $BACKUP_DIR"
+}
+
+secrets_scan() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    if has gitleaks; then
+        gitleaks detect --source . --no-git --redact -v
+    elif has trufflehog; then
+        trufflehog filesystem . --no-update
+    elif has rg; then
+        if rg -n --hidden \
+            -g '!.git/**' -g '!node_modules/**' -g '!.venv/**' -g '!venv/**' \
+            -e 'AKIA[0-9A-Z]{16}' \
+            -e 'ghp_[A-Za-z0-9]{36}' \
+            -e 'sk-[A-Za-z0-9]{20,}' \
+            -e '-----BEGIN (RSA|OPENSSH|EC) PRIVATE KEY-----' .; then
+            warn "Potential secrets found"
+            return 1
+        fi
+        info "No obvious secrets found"
+    else
+        die "Install gitleaks, trufflehog, or ripgrep"
+    fi
+}
+
+backup_project() {
+    local folder="${1:-$PWD}"
+    cd "$folder" || die "Cannot enter $folder"
+
+    local stamp
+    stamp=$(date +%Y%m%d-%H%M%S)
+    mkdir -p "$BACKUP_DIR"
+
+    if [[ -f compose.yaml || -f docker-compose.yml ]] &&
+        docker compose ps db 2>/dev/null | grep -q 'Up'; then
+        local user="${POSTGRES_USER:-app}"
+        local db="${POSTGRES_DB:-app}"
+        local out="$BACKUP_DIR/db-$stamp.sql"
+
+        if docker compose exec -T db pg_dump -U "$user" "$db" >"$out"; then
+            info "[OK] database backup: $out"
+        else
+            warn "pg_dump failed"
+            rm -f "$out"
+        fi
+    else
+        local name ext
+        name=$(basename "$PWD")
+        ext="tar.zst"
+        local -a tar_opts=(--zstd -cf)
+
+        if ! has zstd; then
+            ext="tar.gz"
+            tar_opts=(-czf)
+        fi
+
+        local out="$BACKUP_DIR/$name-$stamp.$ext"
+        tar "${tar_opts[@]}" "$out" \
+            --exclude=.venv --exclude=venv --exclude=__pycache__ \
+            --exclude=.git --exclude=node_modules \
+            -C "$(dirname "$PWD")" "$name" 2>/dev/null
+
+        if [[ -f "$out" ]]; then
+            info "[OK] project backup: $out"
+        else
+            warn "Backup failed"
+        fi
+    fi
+
+    find "$BACKUP_DIR" -maxdepth 1 -type f \
+        \( -name 'db-*.sql' -o -name '*.tar.zst' -o -name '*.tar.gz' \) \
+        -printf '%T@ %p\n' 2>/dev/null |
+        sort -nr |
+        tail -n +11 |
+        cut -d' ' -f2- |
+        xargs -r rm -f --
+}
+
+dev_log() {
+    if [[ $# -eq 0 ]]; then
+        die "Usage: dev log <message>"
+    fi
+
+    mkdir -p "$(dirname "$LOG_FILE")"
+
+    local day
+    day=$(date +%F)
+    grep -q "^## ${day}$" "$LOG_FILE" 2>/dev/null ||
+        printf '\n## %s\n\n' "$day" >>"$LOG_FILE"
+
+    printf -- '- **%s** - %s\n' "$(date +%H:%M)" "$*" >>"$LOG_FILE"
+    info "Logged to $LOG_FILE"
+}
+
+roadmap() {
+    if [[ ! -f "$BASE/README.md" ]]; then
+        warn "README not found: $BASE/README.md"
+        return 1
+    fi
+
+    info "LEARNING ROADMAP"
+    info "----------------"
+    awk '/^## Learning Milestones/{flag=1; next} /^---/{if(flag) exit} flag' "$BASE/README.md"
+
+    info ""
+    info "NEXT UNCHECKED ITEMS"
+    info "--------------------"
+    awk '/^## Learning Milestones/{flag=1; next} /^---/{if(flag) exit} flag && /- \[ \]/' "$BASE/README.md"
+}
+
 git_save() {
-    if [ -z "$1" ]; then
+    if [ -z "${1:-}" ]; then
         echo "Usage: dev save 'message'"
         exit 1
     fi
@@ -133,12 +1148,9 @@ git_save() {
         git push -u origin "$branch"
     fi
 
-    echo "✅ Changes pushed"
+    echo "Changes pushed"
 }
 
-# =========================================================
-# SYSTEM HEALTH
-# =========================================================
 health_check() {
     local ram_usage
     local cpu_load
@@ -151,7 +1163,7 @@ health_check() {
     cpu_load=$(awk '{print $1}' /proc/loadavg)
     cpu_cores=$(nproc)
 
-    cpu_usage=$(awk -v load="$cpu_load" -v cores="$cpu_cores" 'BEGIN {print int((load/cores)*100)}')
+    cpu_usage=$(awk -v sys_load="$cpu_load" -v cores="$cpu_cores" 'BEGIN {print int((sys_load/cores)*100)}')
 
     disk_usage=$(df / | awk 'END {print int($5)}')
 
@@ -179,45 +1191,32 @@ health_check() {
     echo "──────────────────────────────────────────────────"
 }
 
-# =========================================================
-# HELP
-# =========================================================
-dev-help() {
-    echo ""
-    echo "DEV TOOLKIT"
-    echo ""
-    echo "Usage:"
-    echo "  dev new python <name>"
-    echo "  dev new api <name>"
-    echo "  dev save 'message'"
-    echo "  dev health"
-    echo ""
-}
-
-# =========================================================
-# COMMAND ROUTER
-# =========================================================
-case "$1" in
+case "${1:-help}" in
     new)
-        case "$2" in
-            python)
-                create_python_project "$3"
-                ;;
-            api)
-                create_api_project "$3"
-                ;;
-            *)
-                show_help
-                ;;
+        case "${2:-}" in
+            python) create_python_project "${3:-}" ;;
+            api) create_api_project "${3:-}" ;;
+            *) usage; exit 1 ;;
         esac
         ;;
-    save)
-        git_save "$2"
-        ;;
-    health)
-        health_check
-        ;;
-    *)
-        show_help
-        ;;
+    init) shift; init_project "${1:-$PWD}" ;;
+    run) shift; run_project "${1:-$PWD}" ;;
+    test) shift; test_project "${1:-$PWD}" ;;
+    lint) shift; lint_project "${1:-$PWD}" ;;
+    fmt) shift; fmt_project "${1:-$PWD}" ;;
+    up) shift; up_project "${1:-$PWD}" ;;
+    down) shift; down_project "${1:-$PWD}" ;;
+    db) shift; db_project "${1:-$PWD}" ;;
+    ship) shift; ship "${1:-}" ;;
+    status) shift; status_project "${1:-$PWD}" ;;
+    clean) shift; clean_project "$@" ;;
+    doctor) doctor ;;
+    secrets) shift; secrets_scan "${1:-$PWD}" ;;
+    backup) shift; backup_project "${1:-$PWD}" ;;
+    log) shift; dev_log "$@" ;;
+    roadmap) roadmap ;;
+    save) git_save "${2:-}" ;;
+    health) health_check ;;
+    help|-h|--help) usage ;;
+    *) usage; exit 1 ;;
 esac
