@@ -1,28 +1,51 @@
 # Shell and Dev Automation Reference
 
-This document describes every automation in `setup/dotfiles/.zshrc` and
-`setup/dotfiles/dev`.
+This document describes every automation in `00-setup/dotfiles/.zshrc` and
+`00-setup/bin/dev`.
 
 ## Files and install
 
 | File | Purpose |
 | --- | --- |
-| `setup/dotfiles/.zshrc` | Shell setup, aliases, functions, and hooks. |
-| `setup/dotfiles/dev` | Unified project and DevOps command runner. |
-| `setup/dotfiles/starship.toml` | Prompt modules for Python, Docker, Kubernetes, and git. |
+| `00-setup/dotfiles/.zshrc` | Shell setup, aliases, functions, and hooks. |
+| `00-setup/bin/dev` | Unified project and DevOps command runner. |
+| `00-setup/dotfiles/starship.toml` | Prompt modules for Python, Docker, Kubernetes, and git. |
+| `00-setup/docs/AUTOMATION.md` | This reference, including every automation case. |
+| `~/Documents/study/AUTOMATION.pdf` | Personal printable copy; generated outside the repo and not tracked. |
 | `~/.zshrc` | Symlink to the repo `.zshrc`. |
 
-Install or refresh the `dev` command:
+Recommended user-local install, which does not require `sudo`:
 
 ```bash
-cp setup/dotfiles/dev /usr/local/bin/dev
-chmod 755 /usr/local/bin/dev
+repo="${DEV_REPO:-$HOME/Documents/study/backend-devops-pathway}"
+mkdir -p "$HOME/.local/bin"
+install -m 755 "$repo/00-setup/bin/dev" "$HOME/.local/bin/dev"
+ln -sfn "$repo/00-setup/dotfiles/.zshrc" "$HOME/.zshrc"
+exec zsh
 ```
 
-If `/usr/local/bin` is not writable:
+System-wide install, if you prefer `/usr/local/bin`:
 
 ```bash
-sudo install -m 755 setup/dotfiles/dev /usr/local/bin/dev
+repo="${DEV_REPO:-$HOME/Documents/study/backend-devops-pathway}"
+sudo install -m 755 "$repo/00-setup/bin/dev" /usr/local/bin/dev
+```
+
+Verify the environment after installing:
+
+```bash
+dev doctor
+```
+
+Regenerate the personal PDF after editing this document. The PDF lives outside
+the repository and is intentionally not committed:
+
+```bash
+repo="${DEV_REPO:-$HOME/Documents/study/backend-devops-pathway}"
+pandoc "$repo/00-setup/docs/AUTOMATION.md" \
+  -o "$HOME/Documents/study/AUTOMATION.pdf" \
+  --pdf-engine=typst --toc --number-sections \
+  -V fontsize=10pt
 ```
 
 ## Environment variables
@@ -69,6 +92,14 @@ commands. Both default to `app`.
 - Options: `HIST_IGNORE_ALL_DUPS`, `APPEND_HISTORY`, `INC_APPEND_HISTORY`,
   `SHARE_HISTORY`.
 
+### PATH priority
+
+- Function: Prepends `~/.local/bin` and `~/.opencode/bin` to `PATH`, so
+  user-local tools are found before system copies.
+- Example: Install `dev` in `~/.local/bin` and it overrides
+  `/usr/local/bin/dev`.
+- Notes: No `sudo` is needed for tools installed in `~/.local/bin`.
+
 ### Startup profiler
 
 - Function: `zprof-start` starts an interactive shell with `zprof` enabled and
@@ -110,14 +141,62 @@ cd ~/Documents/study
 - Notes: Works with both `.venv` and `venv`. If `direnv` is installed, its hook
   is also loaded.
 
+### FZF shell integration
+
+- Function: Loads `fzf --zsh` when `fzf` is installed, enabling fuzzy history,
+  file, and directory widgets.
+- Example: Press `Ctrl-R` for history search, `Ctrl-T` to pick files, or
+  `Alt-C` to change directory.
+- Notes: The binding is provided by your installed `fzf` version.
+
+### direnv hook
+
+- Function: Loads the `direnv` hook when available, so directory-specific
+  `.envrc` files are applied on `cd`.
+- Example:
+
+```bash
+cd ~/Documents/study/projects/payments-api
+echo 'export API_ENV=local' > .envrc
+direnv allow
+```
+
+- Notes: The built-in `.venv` hook still works when `direnv` is absent.
+
 ### Starship prompt modules
 
-- Function: Loads `setup/dotfiles/starship.toml` and shows username/hostname on
-  SSH, directory, git branch/status, Python virtualenv, Docker context,
-  Kubernetes context, and command duration.
+- Function: Loads `00-setup/dotfiles/starship.toml` and shows
+  username/hostname on SSH, directory, git branch/status, Python virtualenv,
+  Docker context, Kubernetes context, and command duration.
 - Example: Enter a project with an active venv and a git repository; the prompt
   shows the `py` and git modules.
 - Notes: Set `STARSHIP_CONFIG` to override the file.
+
+### zoxide directory jumping
+
+- Function: Loads `zoxide init zsh` when `zoxide` is installed.
+- Example:
+
+```bash
+z backend
+z study
+```
+
+- Notes: `zoxide` learns directories as you visit them. Without it, use normal
+  `cd`.
+
+### NVM loading
+
+- Function: Sources `$NVM_DIR/nvm.sh` and the NVM bash completion file when
+  they exist.
+- Example:
+
+```bash
+nvm use 20
+nvm ls
+```
+
+- Notes: This loads an existing NVM installation; it does not install NVM.
 
 ### Welcome and system summary
 
@@ -366,21 +445,41 @@ show-help
 
 ## Short aliases
 
-| Alias | Expands to |
-| --- | --- |
-| `workspace` | `cd ~/Documents/study` |
-| `pathway` | `cd ~/Documents/study/backend-devops-pathway` |
-| `study-projects` | `cd ~/Documents/study/projects` |
-| `vsc` | `code .` |
-| `d` | `docker` |
-| `dc` | `docker compose` |
-| `gst` | `git status` |
-| `gcm` | `git commit -m` |
-| `update` | `sudo dnf upgrade --refresh -y` |
-| `update-all` | dnf upgrade, autoremove, and flatpak update |
-| `c` | `clear` |
-| `emergency` | `nano ~/.zshrc` |
-| `loadzsh` | `source ~/.zshrc` |
+| Alias | Expands to | Example |
+| --- | --- | --- |
+| `workspace` | `cd ~/Documents/study` | `workspace` |
+| `pathway` | `cd ~/Documents/study/backend-devops-pathway` | `pathway` |
+| `study-projects` | `cd ~/Documents/study/projects` | `study-projects` |
+| `vsc` | `code .` | `vsc` |
+| `d` | `docker` | `d ps` |
+| `dc` | `docker compose` | `dc up -d` |
+| `gst` | `git status` | `gst` |
+| `gcm` | `git commit -m` | `gcm "docs: update setup notes"` |
+| `update` | `sudo dnf upgrade --refresh -y` | `update` |
+| `update-all` | dnf upgrade, autoremove, and flatpak update | `update-all` |
+| `c` | `clear` | `c` |
+| `emergency` | `nano ~/.zshrc` | `emergency` |
+| `loadzsh` | `source ~/.zshrc` | `loadzsh` |
+| `health` | Quick RAM and disk summary | `health` |
+
+Example session:
+
+```bash
+workspace
+pathway
+study-projects
+vsc
+d ps
+dc up -d
+gst
+gcm "docs: update setup notes"
+update
+update-all
+health
+c
+emergency
+loadzsh
+```
 
 ---
 
@@ -582,11 +681,17 @@ dev clean -y --venv --docker
 
 - Function: Checks installed tools and versions, Docker daemon access, GitHub
   authentication, failed systemd units, disk usage, and configured paths.
+- Tool checks: `git`, `python3`, `python3.13`, `uv`, `docker`,
+  `docker compose`, `gh`, `ruff`, `pytest`, `pre-commit`, `gitleaks`, `jq`,
+  `kubectl`, `terraform`, and `ansible`.
 - Example:
 
 ```bash
 dev doctor
 ```
+
+- Notes: Tool checks print `[OK]` or `[MISS]`; Docker, GitHub, and systemd
+  checks are reported separately. A missing optional tool does not stop `dev`.
 
 ### `dev secrets [dir]`
 
@@ -740,10 +845,15 @@ backup
 | `gitleaks` | Secret scanning | `trufflehog`, then `rg` |
 | `trufflehog` | Secret scanning | `rg` |
 | `gh` | PR creation and status | Manual push; `git` output only |
+| `terraform` | Infrastructure checks in `dev doctor` | Reported as `[MISS]` |
+| `ansible` | Configuration checks in `dev doctor` | Reported as `[MISS]` |
+| `starship` | Prompt modules | Basic shell prompt |
+| `fastfetch` | Welcome system summary | Banner only |
 | `zstd` | Faster backups | `.tar.gz` |
 | `fzf` | `fkill` and shell history widgets | `fkill` is disabled |
 | `notify-send` | Focus timer notification | No notification; log still written |
 | `zoxide` | `z` directory jumps | Normal `cd` |
+| `pandoc` + `typst` | Regenerating the personal PDF outside the repo | Markdown remains the source of truth |
 
 # Notes
 

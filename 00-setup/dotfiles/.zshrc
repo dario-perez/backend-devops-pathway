@@ -123,8 +123,8 @@ fi
 # =========================================================
 # STARSHIP
 # =========================================================
-if [[ -f "$DEV_REPO/setup/dotfiles/starship.toml" ]]; then
-    export STARSHIP_CONFIG="$DEV_REPO/setup/dotfiles/starship.toml"
+if [[ -f "$DEV_REPO/00-setup/dotfiles/starship.toml" ]]; then
+    export STARSHIP_CONFIG="$DEV_REPO/00-setup/dotfiles/starship.toml"
 fi
 
 if command -v starship >/dev/null 2>&1 && [ -x "$(command -v starship)" ]; then
