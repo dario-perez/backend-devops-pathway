@@ -49,5 +49,6 @@ dev lint
 dev ship "feat: add payments endpoint"
 See docs/AUTOMATION.md for every command, example, environment variable,
 and fallback.
+```
 
 ---
