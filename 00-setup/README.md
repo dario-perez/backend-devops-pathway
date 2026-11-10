@@ -23,14 +23,25 @@ git clone git@github.com:dario-perez/backend-devops-pathway.git
 cd backend-devops-pathway/00-setup
 ./install.sh
 exec zsh
+```
+
 The installer:
-- symlinks ~/.zshrc to 00-setup/dotfiles/.zshrc
-- installs dev into ~/.local/bin/dev
-- creates ~/.config/zsh/user_aliases.zsh for local overrides
-Verify
+
+- symlinks `~/.zshrc` to `00-setup/dotfiles/.zshrc`
+- installs `dev` into `~/.local/bin/dev`
+- creates `~/.config/zsh/user_aliases.zsh` for local overrides
+
+## Verify
+
+```bash
 dev doctor
-All required tool checks should show [OK].
-Layout
+```
+
+All required tool checks should show `[OK]`.
+
+## Layout
+
+```text
 00-setup/
 ├── install.sh
 ├── bin/
@@ -40,15 +51,20 @@ Layout
 │   └── starship.toml
 └── docs/
     └── AUTOMATION.md
-Common commands
+```
+
+## Common commands
+
+```bash
 dev help
 dev new api payments-api
 dev run
 dev test
 dev lint
 dev ship "feat: add payments endpoint"
-See docs/AUTOMATION.md for every command, example, environment variable,
-and fallback.
 ```
+
+See `docs/AUTOMATION.md` for every command, example, environment variable,
+and fallback.
 
 ---
